@@ -1,0 +1,8 @@
+rootProject.name = 'voting-system'
+
+
+include 'common'
+include 'client-vote-station'
+include 'client-query-station'
+include 'server-central'
+
