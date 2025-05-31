@@ -1,0 +1,44 @@
+-- Tabla de ciudadanos/votantes
+CREATE TABLE voters (
+    document VARCHAR(20) PRIMARY KEY,
+    full_name TEXT NOT NULL,
+    fingerprint_hash TEXT, -- opcional si se gestiona biometría
+    assigned_station_id INTEGER REFERENCES stations(station_id),
+    assigned_table_number INTEGER,
+    is_enabled BOOLEAN DEFAULT TRUE, -- tras validación de antecedentes
+    has_voted BOOLEAN DEFAULT FALSE
+);
+
+-- Tabla de estaciones de votación
+CREATE TABLE stations (
+    station_id SERIAL PRIMARY KEY,
+    location TEXT NOT NULL,
+    ip_address TEXT UNIQUE
+);
+
+-- Tabla de candidatos
+CREATE TABLE candidates (
+    candidate_id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    party TEXT
+);
+
+-- Tabla de votos
+CREATE TABLE votes (
+    vote_id SERIAL PRIMARY KEY,
+    document VARCHAR(20) NOT NULL REFERENCES voters(document),
+    candidate_id INTEGER NOT NULL REFERENCES candidates(candidate_id),
+    station_id INTEGER NOT NULL REFERENCES stations(station_id),
+    timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(document) -- evita voto doble
+);
+
+-- Tabla de logs de fraude y eventos
+CREATE TABLE security_events (
+    event_id SERIAL PRIMARY KEY,
+    document VARCHAR(20),
+    event_type TEXT, -- ej: 'VOTO_MULTIPLE', 'MESA_INCORRECTA'
+    description TEXT,
+    station_id INTEGER REFERENCES stations(station_id),
+    timestamp TIMESTAMP DEFAULT NOW()
+);
