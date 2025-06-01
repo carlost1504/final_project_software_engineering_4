@@ -1,4 +1,6 @@
-package server;
+package server.test;
+
+import server.Database;
 
 import java.sql.Connection;
 import java.sql.SQLException;

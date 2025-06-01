@@ -1,6 +1,6 @@
 // server-central/src/main/java/server/TestClient.java
 
-package server;
+package server.test;
 
 import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.ObjectPrx;

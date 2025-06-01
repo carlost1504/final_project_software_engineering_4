@@ -46,25 +46,39 @@ public class VoteManager {
     public boolean processVote(String document, int candidateId, int stationId) {
         try (Connection conn = Database.getConnection()) {
             // Verificar si el votante existe, está habilitado y no ha votado
-            PreparedStatement voterStmt = conn.prepareStatement("SELECT is_enabled, has_voted FROM voters WHERE document = ?");
+            PreparedStatement voterStmt = conn.prepareStatement(
+                    "SELECT is_enabled, has_voted, assigned_station_id FROM voters WHERE document = ?"
+            );
             voterStmt.setString(1, document);
             ResultSet voterRs = voterStmt.executeQuery();
 
             if (!voterRs.next()) {
-                logSecurityEvent(conn, document, "DOCUMENTO_NO_REGISTRADO", "Intento de voto con documento inexistente", stationId);
+                logSecurityEvent(conn, document, "DOCUMENTO_NO_REGISTRADO",
+                        "Intento de voto con documento inexistente", stationId);
                 return false;
             }
 
             boolean isEnabled = voterRs.getBoolean("is_enabled");
             boolean hasVoted = voterRs.getBoolean("has_voted");
+            int assignedStationId = voterRs.getInt("assigned_station_id");
 
             if (!isEnabled) {
-                logSecurityEvent(conn, document, "NO_HABILITADO", "Votante no habilitado", stationId);
+                logSecurityEvent(conn, document, "NO_HABILITADO",
+                        "Votante no habilitado", stationId);
                 return false;
             }
 
             if (hasVoted) {
-                logSecurityEvent(conn, document, "VOTO_MULTIPLE", "Votante ya ha votado", stationId);
+                logSecurityEvent(conn, document, "VOTO_MULTIPLE",
+                        "Votante ya ha votado", stationId);
+                return false;
+            }
+
+            // Validar que el votante esté votando en su estación asignada
+            if (assignedStationId != stationId) {
+                logSecurityEvent(conn, document, "MESA_INCORRECTA",
+                        "Intento de votar en estación incorrecta. Asignada: " + assignedStationId + ", Actual: " + stationId,
+                        stationId);
                 return false;
             }
 
@@ -78,7 +92,9 @@ public class VoteManager {
             voteStmt.executeUpdate();
 
             // Actualizar estado del votante
-            PreparedStatement updateVoter = conn.prepareStatement("UPDATE voters SET has_voted = TRUE WHERE document = ?");
+            PreparedStatement updateVoter = conn.prepareStatement(
+                    "UPDATE voters SET has_voted = TRUE WHERE document = ?"
+            );
             updateVoter.setString(1, document);
             updateVoter.executeUpdate();
 
