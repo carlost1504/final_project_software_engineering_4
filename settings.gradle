@@ -1,8 +1,4 @@
-rootProject.name = 'voting-system'
+// settings.gradle
 
-
-include 'common'
-include 'client-vote-station'
-include 'client-query-station'
-include 'server-central'
-
+rootProject.name = 'final_project_software_engineering_4'
+include ':common', ':server-central', ':client-vote-station', ':client-query-station'

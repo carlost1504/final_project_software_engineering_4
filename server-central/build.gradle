@@ -1,12 +1,7 @@
+// server-central/build.gradle
+
 plugins {
-    id 'java'
-}
-
-group = 'co.votingsystem'
-version = '1.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
+    id 'application'
 }
 
 dependencies {
@@ -14,8 +9,23 @@ dependencies {
     implementation 'com.zeroc:ice:3.7.10'
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+// Ya no necesitas establecer un mainClass global aquí
+// application {
+//     mainClass = 'server.TestClient'
+// }
+
+// ✅ Tarea para correr el servidor
+task runServer(type: JavaExec) {
+    group = "Application"
+    description = "Ejecuta el servidor ICE."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.ServerApp'
 }
 
+// ✅ Tarea para correr el cliente de prueba
+task runTestClient(type: JavaExec) {
+    group = "Application"
+    description = "Ejecuta el cliente de prueba."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.TestClient'
+}
