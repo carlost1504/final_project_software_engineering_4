@@ -1,28 +1,68 @@
+// Ubicación: common/build.gradle
+
+// Aplicamos el plugin de Java, que ya debería estar siendo aplicado
+// globalmente por el build.gradle raíz si seguiste mis instrucciones anteriores.
+// Si no, descomenta la siguiente sección de plugins:
+/*
 plugins {
     id 'java'
 }
+*/
 
-group = 'co.votingsystem'
-version = '1.0-SNAPSHOT'
+// Directorio donde se generarán los archivos Java desde los .ice
+// Gradle por defecto usa $buildDir que es common/build/
+def generatedSliceSourcesDir = file("$buildDir/generated/sources/slice/main/java")
 
-repositories {
-    mavenCentral()
+// Tarea personalizada para compilar los archivos .ice usando slice2java
+task compileSlice(type: Exec) {
+    group = 'build'
+    description = 'Compiles Slice (.ice) files to Java using local slice2java.'
+
+    // Define los archivos .ice de entrada.
+    // Si tienes más, añádelos aquí.
+    def iceFiles = files(
+        'src/main/slice/VoteStation.ice',
+        'src/main/slice/QueryStation.ice'
+        // Añade más archivos .ice aquí si es necesario
+    )
+
+    // El comando a ejecutar.
+    // Como slice2java está en el PATH, no necesitamos la ruta completa.
+    commandLine 'slice2java', '--output-dir', generatedSliceSourcesDir.absolutePath
+
+    // Añade los archivos .ice como argumentos al comando
+    args iceFiles.collect { it.absolutePath }
+    
+    // (Opcional) Añade el directorio de los .ice al include path de slice2java
+    // por si tienes imports entre tus archivos .ice
+    // args '-I', file('src/main/slice').absolutePath
+
+
+    // Asegura que el directorio de salida exista antes de ejecutar el comando
+    doFirst {
+        generatedSliceSourcesDir.mkdirs()
+    }
+
+    // Define las entradas y salidas para que Gradle sepa cuándo la tarea está actualizada
+    inputs.files iceFiles
+    outputs.dir generatedSliceSourcesDir
 }
 
-dependencies {
-    implementation 'com.zeroc:ice:3.7.10'
-}
+// Hacemos que la tarea 'compileJava' dependa de nuestra nueva tarea 'compileSlice'.
+// Esto asegura que los .ice se compilen ANTES que el código Java.
+compileJava.dependsOn compileSlice
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-// Configurar el directorio generated como source set
+// Añadimos el directorio de los archivos generados a las fuentes de Java
+// para que el compilador de Java los encuentre.
 sourceSets {
     main {
         java {
-            srcDirs = ['src/main/java', 'src/main/generated']
+            srcDir generatedSliceSourcesDir
         }
     }
+}
+
+// Las dependencias que necesita el código generado por Slice.
+dependencies {
+    implementation 'com.zeroc:ice:3.7.10'
 }

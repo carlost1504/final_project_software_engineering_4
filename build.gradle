@@ -1,19 +1,14 @@
-plugins {
-    id 'java'
-}
+// build.gradle (raíz)
+allprojects {
+    apply plugin: 'java'
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
+    repositories {
+        mavenCentral()
+    }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-}
-
-test {
-    useJUnitPlatform()
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
 }
