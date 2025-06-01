@@ -1,147 +1,178 @@
-// server-central/src/main/java/server/VoteManager.java
-
 package server;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
 
 /**
- * Clase que gestiona toda la lógica de negocio para la votación.
- * Utiliza el patrón Singleton para garantizar una única instancia centralizada
- * que gestione el estado de todos los votos.
+ * Clase que gestiona la lógica principal del sistema de votación.
+ * Implementa el patrón Singleton para garantizar una única instancia global.
+ * Se encarga de registrar votos válidos, prevenir duplicados, registrar eventos de seguridad
+ * y generar archivos de registro CSV.
  */
 public class VoteManager {
-
     private static final VoteManager instance = new VoteManager();
 
-    // --- Constantes para los nombres de archivo ---
+    // Nombres de los archivos CSV
     private static final String PARTIAL_CSV_FILENAME = "partial_votes.csv";
     private static final String RESUME_CSV_FILENAME = "resume.csv";
 
-    private final Set<String> documentosVotantes = Collections.synchronizedSet(new HashSet<>());
-    private final Map<Integer, Integer> conteoVotos = new ConcurrentHashMap<>();
-
     private VoteManager() {
-        // Al iniciar el servidor, creamos o limpiamos los archivos CSV con sus encabezados.
         initializeCSVFiles();
-        reconstruirEstadoDesdeParcial();
+
     }
 
+    /**
+     * Retorna la única instancia de la clase VoteManager.
+     * @return instancia singleton
+     */
     public static VoteManager getInstance() {
         return instance;
     }
 
     /**
-     * Prepara los archivos CSV al inicio, escribiendo las cabeceras.
+     * Procesa el voto de un ciudadano. Verifica condiciones de elegibilidad y registro previo.
+     * Si el voto es válido, se almacena en la base de datos y se registra en un archivo CSV parcial.
+     * @param document Documento del votante
+     * @param candidateId ID del candidato
+     * @param stationId ID de la estación de votación
+     * @return true si el voto fue aceptado, false en caso contrario
      */
-    private void initializeCSVFiles() {
-        // Inicializa el archivo de resumen
-        try (PrintWriter writer = new PrintWriter(new FileWriter(RESUME_CSV_FILENAME, false))) {
-            writer.println("candidate_id,total_votes");
-        } catch (IOException e) {
-            System.err.println("Error al inicializar el archivo de resumen: " + e.getMessage());
-        }
+    public boolean processVote(String document, int candidateId, int stationId) {
+        try (Connection conn = Database.getConnection()) {
+            // Verificar si el votante existe, está habilitado y no ha votado
+            PreparedStatement voterStmt = conn.prepareStatement("SELECT is_enabled, has_voted FROM voters WHERE document = ?");
+            voterStmt.setString(1, document);
+            ResultSet voterRs = voterStmt.executeQuery();
 
-        // Inicializa el archivo parcial
-        try (PrintWriter writer = new PrintWriter(new FileWriter(PARTIAL_CSV_FILENAME, false))) {
-            writer.println("timestamp,document,candidate_id");
-        } catch (IOException e) {
-            System.err.println("Error al inicializar el archivo parcial: " + e.getMessage());
-        }
-    }
+            if (!voterRs.next()) {
+                logSecurityEvent(conn, document, "DOCUMENTO_NO_REGISTRADO", "Intento de voto con documento inexistente", stationId);
+                return false;
+            }
 
+            boolean isEnabled = voterRs.getBoolean("is_enabled");
+            boolean hasVoted = voterRs.getBoolean("has_voted");
 
-    public boolean processVote(String document, int candidateId) {
-        if (documentosVotantes.add(document)) {
-            conteoVotos.merge(candidateId, 1, Integer::sum);
+            if (!isEnabled) {
+                logSecurityEvent(conn, document, "NO_HABILITADO", "Votante no habilitado", stationId);
+                return false;
+            }
 
-            System.out.println("LOG: Voto ACEPTADO para documento: " + document + ", candidato: " + candidateId);
+            if (hasVoted) {
+                logSecurityEvent(conn, document, "VOTO_MULTIPLE", "Votante ya ha votado", stationId);
+                return false;
+            }
 
-            // PASO 3: Al aceptar un voto, lo registramos en el CSV parcial.
+            // Registrar el voto en la base de datos
+            PreparedStatement voteStmt = conn.prepareStatement(
+                    "INSERT INTO votes (document, candidate_id, station_id) VALUES (?, ?, ?)"
+            );
+            voteStmt.setString(1, document);
+            voteStmt.setInt(2, candidateId);
+            voteStmt.setInt(3, stationId);
+            voteStmt.executeUpdate();
+
+            // Actualizar estado del votante
+            PreparedStatement updateVoter = conn.prepareStatement("UPDATE voters SET has_voted = TRUE WHERE document = ?");
+            updateVoter.setString(1, document);
+            updateVoter.executeUpdate();
+
+            // Registrar en CSV parcial
             logVoteToPartialCSV(document, candidateId);
 
+            System.out.println("LOG: Voto registrado con éxito: " + document + " -> Candidato " + candidateId);
             return true;
-        } else {
-            System.out.println("LOG: Voto RECHAZADO (duplicado) para documento: " + document);
+
+        } catch (Exception e) {
+            System.err.println("Error al procesar el voto: " + e.getMessage());
             return false;
         }
     }
 
     /**
-     * Añade una línea al archivo CSV parcial por cada voto válido.
-     * Es 'synchronized' para evitar que múltiples hilos escriban al mismo tiempo y corrompan el archivo.
-     *
-     * @param document    El documento del votante.
-     * @param candidateId El ID del candidato.
+     * Registra eventos de seguridad como intentos de voto inválido o repetido.
+     * @param conn Conexión activa a la base de datos
+     * @param document Documento del votante
+     * @param eventType Tipo de evento (ej. VOTO_MULTIPLE)
+     * @param description Descripción del evento
+     * @param stationId Estación desde la que ocurrió el evento
+     */
+    private void logSecurityEvent(Connection conn, String document, String eventType, String description, int stationId) {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO security_events (document, event_type, description, station_id) VALUES (?, ?, ?, ?)")) {
+            stmt.setString(1, document);
+            stmt.setString(2, eventType);
+            stmt.setString(3, description);
+            stmt.setInt(4, stationId);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("Error al registrar evento de seguridad: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Inicializa los archivos CSV con cabeceras. Se ejecuta al iniciar el sistema.
+     */
+    private void initializeCSVFiles() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(PARTIAL_CSV_FILENAME, false))) {
+            writer.println("timestamp,document,candidate_id");
+        } catch (IOException e) {
+            System.err.println("Error al inicializar partial_votes.csv: " + e.getMessage());
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(RESUME_CSV_FILENAME, false))) {
+            writer.println("candidate_id,candidate_name,total_votes");
+        } catch (IOException e) {
+            System.err.println("Error al inicializar resume.csv: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Registra cada voto aceptado en el archivo partial_votes.csv.
+     * @param document Documento del votante
+     * @param candidateId ID del candidato votado
      */
     private synchronized void logVoteToPartialCSV(String document, int candidateId) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(PARTIAL_CSV_FILENAME, true))) {
             String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             writer.println(timestamp + "," + document + "," + candidateId);
         } catch (IOException e) {
-            System.err.println("Error al escribir en el log parcial CSV: " + e.getMessage());
+            System.err.println("Error al registrar voto en CSV parcial: " + e.getMessage());
         }
     }
 
     /**
-     * Genera el archivo CSV con el resumen final de votos por candidato.
-     * Este método sobreescribe el archivo cada vez que es llamado con los datos más recientes.
+     * Genera el reporte resumen de votos por candidato a partir de la base de datos.
+     * Se guarda como archivo CSV llamado resume.csv
      */
     public void generateResumeCSV() {
-    System.out.println("\nLOG: Iniciando generateResumeCSV()..."); // Log inicial
-    System.out.println("LOG: Contenido de conteoVotos ANTES de escribir:");
-    if (conteoVotos.isEmpty()) {
-        System.out.println("LOG: ¡El mapa conteoVotos está VACÍO!");
-    } else {
-        for (Map.Entry<Integer, Integer> entry : conteoVotos.entrySet()) {
-            System.out.println("LOG: Candidato: " + entry.getKey() + " -> Votos: " + entry.getValue());
-        }
-    }
+        try (Connection conn = Database.getConnection();
+             PrintWriter writer = new PrintWriter(new FileWriter(RESUME_CSV_FILENAME, false))) {
 
-    System.out.println("LOG: Escribiendo en archivo: " + RESUME_CSV_FILENAME);
-    try (PrintWriter writer = new PrintWriter(new FileWriter(RESUME_CSV_FILENAME, false))) {
-        writer.println("candidate_id,total_votes");
-        for (Map.Entry<Integer, Integer> entry : conteoVotos.entrySet()) {
-            writer.println(entry.getKey() + "," + entry.getValue());
-        }
-        writer.flush(); // Forzar escritura
-        System.out.println("LOG: Resumen de votos generado exitosamente en disco.");
-    } catch (IOException e) {
-        System.err.println("Error al generar el CSV de resumen: " + e.getMessage());
-        e.printStackTrace(); // Imprime el stack trace completo del error
-    }
-    System.out.println("LOG: Finalizando generateResumeCSV().");
-    }   
-    private void reconstruirEstadoDesdeParcial() {
-    try (BufferedReader br = new BufferedReader(new FileReader(PARTIAL_CSV_FILENAME))) {
-        String line;
-        br.readLine(); // Saltar la cabecera
-        while ((line = br.readLine()) != null) {
-            String[] parts = line.split(",");
-            if (parts.length == 3) {
-                String doc = parts[1];
-                int candidateId = Integer.parseInt(parts[2]);
+            writer.println("candidate_id,candidate_name,total_votes");
 
-                // Evita duplicados (por si se reinicia varias veces)
-                if (documentosVotantes.add(doc)) {
-                    conteoVotos.merge(candidateId, 1, Integer::sum);
-                }
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT c.candidate_id, c.name, COUNT(v.vote_id) AS total_votes " +
+                            "FROM candidates c LEFT JOIN votes v ON c.candidate_id = v.candidate_id " +
+                            "GROUP BY c.candidate_id, c.name ORDER BY total_votes DESC"
+            );
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt("candidate_id");
+                String name = rs.getString("name");
+                int total = rs.getInt("total_votes");
+                writer.println(id + "," + name + "," + total);
             }
+
+            System.out.println("LOG: Resumen generado correctamente en resume.csv");
+        } catch (Exception e) {
+            System.err.println("Error al generar el resumen: " + e.getMessage());
         }
-        System.out.println("LOG: Estado reconstruido desde partial_votes.csv");
-    } catch (IOException e) {
-        System.err.println("Error al reconstruir estado desde CSV: " + e.getMessage());
     }
 }
-}
-

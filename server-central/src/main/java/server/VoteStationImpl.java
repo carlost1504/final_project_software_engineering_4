@@ -1,42 +1,47 @@
+// server-central/src/main/java/server/VoteStationImpl.java
 package server;
 
 import com.zeroc.Ice.Current;
 
-// Esta clase es la implementación del "servant" de ICE.
-// Su única responsabilidad es recibir las llamadas remotas y delegarlas
-// al gestor de lógica de negocio (VoteManager), que es un Singleton.
+/**
+ * Implementación de la interfaz remota VoteStation definida en ICE.
+ * Esta clase actúa como puente entre el cliente y la lógica de negocio,
+ * delegando la responsabilidad de registrar votos y generar reportes
+ * al VoteManager (que sigue el patrón Singleton).
+ */
 public class VoteStationImpl implements common.VoteStation {
 
     /**
-     * Este método se ejecuta cuando un cliente vota.
-     * Delega TODA la lógica a VoteManager.
+     * Procesa una solicitud de voto proveniente del cliente.
+     *
+     * @param document Documento de identificación del votante.
+     * @param candidateId ID del candidato seleccionado.
+     * @param current Contexto de la llamada remota (no se usa directamente aquí).
+     * @return true si el voto fue registrado exitosamente, false si fue rechazado (duplicado).
      */
     @Override
-    public boolean vote(String document, int candidateId, Current current) {
-        System.out.println("\n--- Petición de Voto Recibida ---");
-        System.out.println("Recibido desde el cliente: Documento=" + document + ", CandidatoID=" + candidateId);
+    public boolean vote(String document, int candidateId, int stationId, Current current) {
+        System.out.println("\n--- [SERVIDOR] Petición de Voto Recibida ---");
+        System.out.printf("-> Documento: %s, Candidato ID: %d, Estación ID: %d%n", document, candidateId, stationId);
 
-        // Obtenemos la instancia única de nuestro gestor de lógica
         VoteManager manager = VoteManager.getInstance();
+        boolean success = manager.processVote(document, candidateId, stationId);
 
-        // Delegamos el procesamiento y retornamos el resultado directamente.
-        // Aquí es donde se actualiza el conteo de votos en memoria.
-        boolean success = manager.processVote(document, candidateId);
+        System.out.println("-> Resultado: " + (success ? "ÉXITO " : "FALLO"));
+        System.out.println("--------------------------------------------");
 
-        System.out.println("Respuesta enviada al cliente: " + (success ? "ÉXITO" : "FALLO (DUPLICADO)"));
-        System.out.println("---------------------------------");
-        
         return success;
     }
 
     /**
-     * Este método se ejecuta cuando el cliente pide generar el reporte.
-     * Delega TODA la lógica a VoteManager.
+     * Solicita la generación del archivo de resumen de votos.
+     *
+     * @param current Contexto de la llamada remota.
      */
     @Override
-    public void generateReport(com.zeroc.Ice.Current current) {
-        System.out.println("\n--- Petición de Generar Reporte Recibida ---");
-        // Simplemente le pedimos al VoteManager que haga el trabajo de escribir el CSV.
+    public void generateReport(Current current) {
+        System.out.println("\n--- [SERVIDOR] Petición de generación de reporte recibida ---");
         VoteManager.getInstance().generateResumeCSV();
+        System.out.println("-> Reporte generado correctamente.");
     }
 }

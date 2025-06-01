@@ -17,45 +17,80 @@ package common;
 
 public interface VoteStationPrx extends com.zeroc.Ice.ObjectPrx
 {
-    default boolean vote(String document, int candidateId)
+    default boolean vote(String document, int candidateId, int stationId)
     {
-        return vote(document, candidateId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+        return vote(document, candidateId, stationId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
-    default boolean vote(String document, int candidateId, java.util.Map<String, String> context)
+    default boolean vote(String document, int candidateId, int stationId, java.util.Map<String, String> context)
     {
-        return _iceI_voteAsync(document, candidateId, context, true).waitForResponse();
+        return _iceI_voteAsync(document, candidateId, stationId, context, true).waitForResponse();
     }
 
-    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId)
+    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, int stationId)
     {
-        return _iceI_voteAsync(document, candidateId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+        return _iceI_voteAsync(document, candidateId, stationId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
-    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, java.util.Map<String, String> context)
+    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, int stationId, java.util.Map<String, String> context)
     {
-        return _iceI_voteAsync(document, candidateId, context, false);
+        return _iceI_voteAsync(document, candidateId, stationId, context, false);
     }
 
     /**
      * @hidden
      * @param iceP_document -
      * @param iceP_candidateId -
+     * @param iceP_stationId -
      * @param context -
      * @param sync -
      * @return -
      **/
-    default com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> _iceI_voteAsync(String iceP_document, int iceP_candidateId, java.util.Map<String, String> context, boolean sync)
+    default com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> _iceI_voteAsync(String iceP_document, int iceP_candidateId, int iceP_stationId, java.util.Map<String, String> context, boolean sync)
     {
         com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "vote", null, sync, null);
         f.invoke(true, context, null, ostr -> {
                      ostr.writeString(iceP_document);
                      ostr.writeInt(iceP_candidateId);
+                     ostr.writeInt(iceP_stationId);
                  }, istr -> {
                      boolean ret;
                      ret = istr.readBool();
                      return ret;
                  });
+        return f;
+    }
+
+    default void generateReport()
+    {
+        generateReport(com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default void generateReport(java.util.Map<String, String> context)
+    {
+        _iceI_generateReportAsync(context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> generateReportAsync()
+    {
+        return _iceI_generateReportAsync(com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> generateReportAsync(java.util.Map<String, String> context)
+    {
+        return _iceI_generateReportAsync(context, false);
+    }
+
+    /**
+     * @hidden
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<Void> _iceI_generateReportAsync(java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<Void> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "generateReport", null, sync, null);
+        f.invoke(false, context, null, null, null);
         return f;
     }
 

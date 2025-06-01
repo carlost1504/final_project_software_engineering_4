@@ -17,7 +17,9 @@ package common;
 
 public interface VoteStation extends com.zeroc.Ice.Object
 {
-    boolean vote(String document, int candidateId, com.zeroc.Ice.Current current);
+    boolean vote(String document, int candidateId, int stationId, com.zeroc.Ice.Current current);
+
+    void generateReport(com.zeroc.Ice.Current current);
 
     /** @hidden */
     static final String[] _iceIds =
@@ -56,19 +58,37 @@ public interface VoteStation extends com.zeroc.Ice.Object
         com.zeroc.Ice.InputStream istr = inS.startReadParams();
         String iceP_document;
         int iceP_candidateId;
+        int iceP_stationId;
         iceP_document = istr.readString();
         iceP_candidateId = istr.readInt();
+        iceP_stationId = istr.readInt();
         inS.endReadParams();
-        boolean ret = obj.vote(iceP_document, iceP_candidateId, current);
+        boolean ret = obj.vote(iceP_document, iceP_candidateId, iceP_stationId, current);
         com.zeroc.Ice.OutputStream ostr = inS.startWriteParams();
         ostr.writeBool(ret);
         inS.endWriteParams(ostr);
         return inS.setResult(ostr);
     }
 
+    /**
+     * @hidden
+     * @param obj -
+     * @param inS -
+     * @param current -
+     * @return -
+    **/
+    static java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceD_generateReport(VoteStation obj, final com.zeroc.IceInternal.Incoming inS, com.zeroc.Ice.Current current)
+    {
+        com.zeroc.Ice.Object._iceCheckMode(null, current.mode);
+        inS.readEmptyParams();
+        obj.generateReport(current);
+        return inS.setResult(inS.writeEmptyParams());
+    }
+
     /** @hidden */
     final static String[] _iceOps =
     {
+        "generateReport",
         "ice_id",
         "ice_ids",
         "ice_isA",
@@ -91,21 +111,25 @@ public interface VoteStation extends com.zeroc.Ice.Object
         {
             case 0:
             {
-                return com.zeroc.Ice.Object._iceD_ice_id(this, in, current);
+                return _iceD_generateReport(this, in, current);
             }
             case 1:
             {
-                return com.zeroc.Ice.Object._iceD_ice_ids(this, in, current);
+                return com.zeroc.Ice.Object._iceD_ice_id(this, in, current);
             }
             case 2:
             {
-                return com.zeroc.Ice.Object._iceD_ice_isA(this, in, current);
+                return com.zeroc.Ice.Object._iceD_ice_ids(this, in, current);
             }
             case 3:
             {
-                return com.zeroc.Ice.Object._iceD_ice_ping(this, in, current);
+                return com.zeroc.Ice.Object._iceD_ice_isA(this, in, current);
             }
             case 4:
+            {
+                return com.zeroc.Ice.Object._iceD_ice_ping(this, in, current);
+            }
+            case 5:
             {
                 return _iceD_vote(this, in, current);
             }
