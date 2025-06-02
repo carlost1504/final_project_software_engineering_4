@@ -57,3 +57,33 @@ CREATE TABLE security_events (
 -- 4. Otorgar permisos completos al usuario (por si ejecutaste esto como otro usuario)
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO votante_user;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO votante_user;
+
+-- Limpiar datos anteriores (en orden para evitar conflictos)
+DELETE FROM votes;
+DELETE FROM security_events;
+DELETE FROM voters;
+DELETE FROM candidates;
+DELETE FROM stations;
+
+-- 1. Insertar estaciones
+INSERT INTO stations (station_id, location, ip_address) VALUES
+(1, 'Cali - Colegio A', '192.168.1.10'),
+(2, 'Bogotá - Universidad B', '192.168.1.11');
+
+-- 2. Insertar candidatos
+INSERT INTO candidates (candidate_id, name, party) VALUES
+(101, 'Candidato A', 'Partido Azul'),
+(102, 'Candidato B', 'Partido Verde');
+
+-- 3. Insertar votantes
+INSERT INTO voters (document, full_name, fingerprint_hash, assigned_station_id, assigned_table_number, is_enabled, has_voted) VALUES
+-- ✅ Casos válidos
+('112233', 'Juan Pérez', 'hash1', 1, 10, TRUE, FALSE),
+('445566', 'Ana Gómez', 'hash2', 1, 11, TRUE, FALSE),
+('778899', 'Luis Ramírez', 'hash3', 1, 12, TRUE, FALSE),
+-- ❌ No habilitado
+('000111', 'Carlos SinPermiso', 'hash4', 1, 13, FALSE, FALSE),
+-- ❌ Ya votó
+('222333', 'María VotóYa', 'hash5', 1, 14, TRUE, TRUE),
+-- ❌ Mesa incorrecta
+('999000', 'Laura OtrasMesa', 'hash6', 2, 15, TRUE, FALSE);
