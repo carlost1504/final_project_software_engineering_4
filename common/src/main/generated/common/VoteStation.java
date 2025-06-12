@@ -17,7 +17,7 @@ package common;
 
 public interface VoteStation extends com.zeroc.Ice.Object
 {
-    boolean vote(String document, int candidateId, int stationId, com.zeroc.Ice.Current current);
+    boolean vote(String document, int candidateId, int stationId, String hmac, com.zeroc.Ice.Current current);
 
     void generateReport(com.zeroc.Ice.Current current);
 
@@ -59,11 +59,13 @@ public interface VoteStation extends com.zeroc.Ice.Object
         String iceP_document;
         int iceP_candidateId;
         int iceP_stationId;
+        String iceP_hmac;
         iceP_document = istr.readString();
         iceP_candidateId = istr.readInt();
         iceP_stationId = istr.readInt();
+        iceP_hmac = istr.readString();
         inS.endReadParams();
-        boolean ret = obj.vote(iceP_document, iceP_candidateId, iceP_stationId, current);
+        boolean ret = obj.vote(iceP_document, iceP_candidateId, iceP_stationId, iceP_hmac, current);
         com.zeroc.Ice.OutputStream ostr = inS.startWriteParams();
         ostr.writeBool(ret);
         inS.endWriteParams(ostr);

@@ -17,24 +17,24 @@ package common;
 
 public interface VoteStationPrx extends com.zeroc.Ice.ObjectPrx
 {
-    default boolean vote(String document, int candidateId, int stationId)
+    default boolean vote(String document, int candidateId, int stationId, String hmac)
     {
-        return vote(document, candidateId, stationId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+        return vote(document, candidateId, stationId, hmac, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
-    default boolean vote(String document, int candidateId, int stationId, java.util.Map<String, String> context)
+    default boolean vote(String document, int candidateId, int stationId, String hmac, java.util.Map<String, String> context)
     {
-        return _iceI_voteAsync(document, candidateId, stationId, context, true).waitForResponse();
+        return _iceI_voteAsync(document, candidateId, stationId, hmac, context, true).waitForResponse();
     }
 
-    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, int stationId)
+    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, int stationId, String hmac)
     {
-        return _iceI_voteAsync(document, candidateId, stationId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+        return _iceI_voteAsync(document, candidateId, stationId, hmac, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
-    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, int stationId, java.util.Map<String, String> context)
+    default java.util.concurrent.CompletableFuture<java.lang.Boolean> voteAsync(String document, int candidateId, int stationId, String hmac, java.util.Map<String, String> context)
     {
-        return _iceI_voteAsync(document, candidateId, stationId, context, false);
+        return _iceI_voteAsync(document, candidateId, stationId, hmac, context, false);
     }
 
     /**
@@ -42,17 +42,19 @@ public interface VoteStationPrx extends com.zeroc.Ice.ObjectPrx
      * @param iceP_document -
      * @param iceP_candidateId -
      * @param iceP_stationId -
+     * @param iceP_hmac -
      * @param context -
      * @param sync -
      * @return -
      **/
-    default com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> _iceI_voteAsync(String iceP_document, int iceP_candidateId, int iceP_stationId, java.util.Map<String, String> context, boolean sync)
+    default com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> _iceI_voteAsync(String iceP_document, int iceP_candidateId, int iceP_stationId, String iceP_hmac, java.util.Map<String, String> context, boolean sync)
     {
         com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "vote", null, sync, null);
         f.invoke(true, context, null, ostr -> {
                      ostr.writeString(iceP_document);
                      ostr.writeInt(iceP_candidateId);
                      ostr.writeInt(iceP_stationId);
+                     ostr.writeString(iceP_hmac);
                  }, istr -> {
                      boolean ret;
                      ret = istr.readBool();

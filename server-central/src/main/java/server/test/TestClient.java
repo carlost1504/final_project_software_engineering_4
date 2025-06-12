@@ -4,6 +4,8 @@ import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.ObjectPrx;
 import com.zeroc.Ice.Util;
 import common.VoteStationPrx;
+import utils.HmacUtil;
+import utils.SecurityConfig;
 
 public class TestClient {
     public static void main(String[] args) {
@@ -18,35 +20,38 @@ public class TestClient {
             System.out.println("--- Cliente de Prueba Iniciado ---");
 
             int stationId = 1; // Debe coincidir con el assigned_station_id en la tabla voters
-
             String[] documents = {"112233", "445566", "778899"};
             int[] candidateIds = {101, 102, 102};
 
-            // Test 1: Voto válido
-            System.out.println("\n[TEST 1] Voto para '" + documents[0] + "'...");
-            boolean result1 = voteStation.vote(documents[0], candidateIds[0], stationId);
-            System.out.println("Resultado: " + (result1 ? "✅ ÉXITO" : "❌ FALLO"));
+            for (int i = 0; i < documents.length; i++) {
+                String doc = documents[i];
+                int cid = candidateIds[i];
+                String data = doc + cid + stationId;
 
-            // Test 2: Voto duplicado
-            System.out.println("\n[TEST 2] Voto duplicado para '" + documents[0] + "'...");
-            boolean result2 = voteStation.vote(documents[0], candidateIds[0], stationId);
-            System.out.println("Resultado: " + (result2 ? "✅ ÉXITO" : "❌ FALLO"));
+                // Generar HMAC
+                String hmac = HmacUtil.generateHmac(data, SecurityConfig.HMAC_SECRET);
 
-            // Test 3: Otro votante válido
-            System.out.println("\n[TEST 3] Voto para '" + documents[1] + "'...");
-            boolean result3 = voteStation.vote(documents[1], candidateIds[1], stationId);
-            System.out.println("Resultado: " + (result3 ? "✅ ÉXITO" : "❌ FALLO"));
+                System.out.printf("\n[TEST %d] Voto para '%s'...\n", i + 1, doc);
+                boolean result = voteStation.vote(doc, cid, stationId, hmac);
+                System.out.println("Resultado: " + (result ? "✅ ÉXITO" : "❌ FALLO"));
+            }
 
-            // Test 4: Otro votante para el mismo candidato
-            System.out.println("\n[TEST 4] Voto para '" + documents[2] + "'...");
-            boolean result4 = voteStation.vote(documents[2], candidateIds[2], stationId);
-            System.out.println("Resultado: " + (result4 ? "✅ ÉXITO" : "❌ FALLO"));
+            // Intentar voto duplicado para el primero
+            String duplicateDoc = documents[0];
+            int duplicateCid = candidateIds[0];
+            String dupData = duplicateDoc + duplicateCid + stationId;
+            String dupHmac = HmacUtil.generateHmac(dupData, SecurityConfig.HMAC_SECRET);
 
-            // Reporte
+            System.out.println("\n[TEST DUPLICADO] Voto repetido para '" + duplicateDoc + "'...");
+            boolean dupResult = voteStation.vote(duplicateDoc, duplicateCid, stationId, dupHmac);
+            System.out.println("Resultado: " + (dupResult ? "✅ ÉXITO" : "❌ FALLO"));
+
+            // Generar reporte
             System.out.println("\n[REPORTE] Generando archivo resumen...");
             voteStation.generateReport();
 
             System.out.println("\n--- Pruebas Finalizadas ---");
+
         } catch (Exception e) {
             System.err.println("Error en el cliente de prueba: " + e.getMessage());
             e.printStackTrace();

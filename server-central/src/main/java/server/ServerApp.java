@@ -24,6 +24,7 @@ public class ServerApp {
                     "VoteStationAdapter", "default -p 10000");
 
             adapter.add(new VoteStationImpl(), Util.stringToIdentity("VoteStation"));
+            adapter.add(new QueryStationImpl(), Util.stringToIdentity("QueryStation"));
             adapter.activate();
 
             VoteManager.getInstance();
