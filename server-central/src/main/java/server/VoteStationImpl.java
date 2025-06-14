@@ -31,23 +31,23 @@ public class VoteStationImpl implements VoteStation {
         try {
 
             String expectedHmac = utils.HmacUtil.generateHmac(data, utils.SecurityConfig.HMAC_SECRET);
-            System.out.println("🧪 HMAC esperado  : " + expectedHmac);
-            System.out.println("📩 HMAC recibido  : " + hmac);
+            System.out.println(" HMAC esperado  : " + expectedHmac);
+            System.out.println(" HMAC recibido  : " + hmac);
 
             if (!expectedHmac.equals(hmac)) {
-                System.out.println("-> ❌ HMAC inválido. Posible intento de manipulación.");
+                System.out.println("->  HMAC inválido. Posible intento de manipulación.");
                 return false;
             }
 
         } catch (Exception e) {
-            System.out.println("-> ❌ Error al validar HMAC: " + e.getMessage());
+            System.out.println("->  Error al validar HMAC: " + e.getMessage());
             return false;
         }
 
         VoteManager manager = VoteManager.getInstance();
         boolean success = manager.processVote(document, candidateId, stationId);
 
-        System.out.println("-> Resultado: " + (success ? "✅ ÉXITO" : "❌ FALLO"));
+        System.out.println("-> Resultado: " + (success ? " ÉXITO" : " FALLO"));
         System.out.println("--------------------------------------------");
 
         return success;

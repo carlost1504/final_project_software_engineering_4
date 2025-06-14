@@ -22,7 +22,8 @@ task compileSlice(type: Exec) {
     // Si tienes más, añádelos aquí.
     def iceFiles = files(
         'src/main/slice/VoteStation.ice',
-        'src/main/slice/QueryStation.ice'
+        'src/main/slice/QueryStation.ice',
+        'src/main/slice/LoadBalancer.ice'
         // Añade más archivos .ice aquí si es necesario
     )
 

@@ -26,13 +26,13 @@ public class TestClientQuery {
                 if (document.equalsIgnoreCase("salir")) break;
 
                 String respuesta = queryStation.query(document);
-                System.out.println("🗳️ Resultado: " + respuesta);
+                System.out.println(" Resultado: " + respuesta);
             }
 
             System.out.println("\n--- Cliente de consulta finalizado ---");
 
         } catch (Exception e) {
-            System.err.println("❌ Error en cliente de consulta: " + e.getMessage());
+            System.err.println(" Error en cliente de consulta: " + e.getMessage());
             e.printStackTrace();
         }
     }

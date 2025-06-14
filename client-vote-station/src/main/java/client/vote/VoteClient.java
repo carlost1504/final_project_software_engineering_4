@@ -26,7 +26,7 @@ public class VoteClient {
             }
 
             Scanner sc = new Scanner(System.in);
-            System.out.println("=== 🗳️ Cliente de Votación ===");
+            System.out.println("===  Cliente de Votación ===");
             initializeVoteLog();
 
             while (true) {
@@ -49,18 +49,18 @@ public class VoteClient {
 
                     String hmac = HmacUtil.generateHmac(document + candidateId + stationId, SecurityConfig.HMAC_SECRET);
                     boolean success = voteStation.vote(document, candidateId, stationId, hmac);
-                    System.out.println("→ Resultado: " + (success ? "✅ Voto registrado" : "❌ Voto rechazado"));
+                    System.out.println("→ Resultado: " + (success ? " Voto registrado" : " Voto rechazado"));
                     logVote(document, candidateId, stationId, success);
 
                 } else if (opcion.equals("2")) {
                     voteStation.generateReport();
                 } else {
-                    System.out.println("⚠️ Opción inválida");
+                    System.out.println(" Opción inválida");
                 }
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error en cliente de votación: " + e.getMessage());
+            System.err.println(" Error en cliente de votación: " + e.getMessage());
             e.printStackTrace();
         }
     }

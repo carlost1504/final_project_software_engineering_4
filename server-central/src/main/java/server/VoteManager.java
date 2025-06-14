@@ -56,7 +56,7 @@ public class VoteManager {
             ResultSet voterRs = voterStmt.executeQuery();
 
             if (!voterRs.next()) {
-                System.out.println("❌ Documento no registrado: " + document);
+                System.out.println(" Documento no registrado: " + document);
                 logSecurityEvent(conn, document, "DOCUMENTO_NO_REGISTRADO",
                         "Intento de voto con documento inexistente", stationId);
                 return false;
@@ -66,24 +66,24 @@ public class VoteManager {
             boolean hasVoted = voterRs.getBoolean("has_voted");
             int assignedStationId = voterRs.getInt("assigned_station_id");
 
-            System.out.printf("✅ Votante encontrado: habilitado=%s, ha_votado=%s, estación_asignada=%d\n",
+            System.out.printf(" Votante encontrado: habilitado=%s, ha_votado=%s, estación_asignada=%d\n",
                     isEnabled, hasVoted, assignedStationId);
 
             // Paso 2: Validaciones
             if (!isEnabled) {
-                System.out.println("❌ El votante no está habilitado.");
+                System.out.println(" El votante no está habilitado.");
                 logSecurityEvent(conn, document, "NO_HABILITADO", "Votante no habilitado", stationId);
                 return false;
             }
 
             if (hasVoted) {
-                System.out.println("❌ El votante ya ha votado.");
+                System.out.println(" El votante ya ha votado.");
                 logSecurityEvent(conn, document, "VOTO_MULTIPLE", "Votante ya ha votado", stationId);
                 return false;
             }
 
             if (assignedStationId != stationId) {
-                System.out.println("❌ Estación incorrecta. Esperada: " + assignedStationId + ", Recibida: " + stationId);
+                System.out.println(" Estación incorrecta. Esperada: " + assignedStationId + ", Recibida: " + stationId);
                 logSecurityEvent(conn, document, "MESA_INCORRECTA",
                         "Intento de votar en estación incorrecta. Asignada: " + assignedStationId + ", Actual: " + stationId,
                         stationId);
@@ -98,22 +98,22 @@ public class VoteManager {
             voteStmt.setInt(2, candidateId);
             voteStmt.setInt(3, stationId);
             voteStmt.executeUpdate();
-            System.out.println("✅ Voto insertado en base de datos.");
+            System.out.println(" Voto insertado en base de datos.");
 
             PreparedStatement updateVoter = conn.prepareStatement(
                     "UPDATE voters SET has_voted = TRUE WHERE document = ?"
             );
             updateVoter.setString(1, document);
             updateVoter.executeUpdate();
-            System.out.println("✅ Estado del votante actualizado.");
+            System.out.println(" Estado del votante actualizado.");
 
             logVoteToPartialCSV(document, candidateId);
 
-            System.out.println("✅ Voto procesado correctamente para " + document);
+            System.out.println(" Voto procesado correctamente para " + document);
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ Error al procesar el voto: " + e.getMessage());
+            System.err.println(" Error al procesar el voto: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

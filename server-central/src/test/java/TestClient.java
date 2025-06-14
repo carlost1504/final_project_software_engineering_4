@@ -17,7 +17,7 @@ public class TestClient {
                 throw new Error("Proxy inválido: no se pudo castear a VoteStationPrx.");
             }
 
-            System.out.println("--- 🧪 Cliente de Pruebas Iniciado ---");
+            System.out.println("---  Cliente de Pruebas Iniciado ---");
 
             int stationId = 1;
             String[] documents = {"112233", "445566", "778899"};
@@ -36,15 +36,15 @@ public class TestClient {
 
             File reportFile = new File("resume.csv");
             if (reportFile.exists() && reportFile.length() > 0) {
-                System.out.println("✅ Reporte generado exitosamente: resume.csv");
+                System.out.println(" Reporte generado exitosamente: resume.csv");
             } else {
-                System.out.println("❌ Error: archivo de resumen no generado o vacío.");
+                System.out.println(" Error: archivo de resumen no generado o vacío.");
             }
 
-            System.out.println("\n--- ✅ Todas las pruebas finalizadas ---");
+            System.out.println("\n---  Todas las pruebas finalizadas ---");
 
         } catch (Exception e) {
-            System.err.println("❌ Error en el cliente de prueba: " + e.getMessage());
+            System.err.println(" Error en el cliente de prueba: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -61,12 +61,12 @@ public class TestClient {
             boolean passed = result == expectedSuccess;
 
             System.out.printf("%s Resultado: %s | Esperado: %s\n",
-                    passed ? "✅ PASÓ" : "❌ FALLÓ",
-                    result ? "✅ ÉXITO" : "❌ FALLO",
-                    expectedSuccess ? "✅" : "❌");
+                    passed ? " PASÓ" : " FALLÓ",
+                    result ? " ÉXITO" : " FALLO",
+                    expectedSuccess ? "" : "");
 
         } catch (Exception e) {
-            System.out.printf("❌ ERROR durante el test '%s': %s\n", label, e.getMessage());
+            System.out.printf(" ERROR durante el test '%s': %s\n", label, e.getMessage());
             e.printStackTrace();
         }
     }

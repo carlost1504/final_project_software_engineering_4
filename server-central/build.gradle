@@ -10,10 +10,10 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.7.2'
 }
 
-// Ya no necesitas establecer un mainClass global aquí
-// application {
-//     mainClass = 'server.TestClient'
-// }
+application {
+    mainClass = 'server.LoadBalancerServer'
+}
+
 
 // ✅ Tarea para correr el servidor
 task runServer(type: JavaExec) {

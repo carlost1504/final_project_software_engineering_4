@@ -19,20 +19,20 @@ public class QueryStationImpl implements QueryStation {
             ResultSet rs = stmt.executeQuery();
 
             if (!rs.next()) {
-                return "❌ Documento no registrado.";
+                return " Documento no registrado.";
             }
 
             boolean isEnabled = rs.getBoolean("is_enabled");
             boolean hasVoted = rs.getBoolean("has_voted");
             int assignedStationId = rs.getInt("assigned_station_id");
 
-            if (!isEnabled) return "❌ Votante no habilitado.";
-            if (hasVoted) return "❌ Ya ha votado.";
-            return "✅ Habilitado. Estación asignada: " + assignedStationId;
+            if (!isEnabled) return " Votante no habilitado.";
+            if (hasVoted) return " Ya ha votado.";
+            return " Habilitado. Estación asignada: " + assignedStationId;
 
         } catch (Exception e) {
             System.err.println("Error en consulta de votante: " + e.getMessage());
-            return "❌ Error interno al consultar el estado del votante.";
+            return " Error interno al consultar el estado del votante.";
         }
     }
 }

@@ -24,7 +24,7 @@ public class QueryClient {
             }
 
             Scanner sc = new Scanner(System.in);
-            System.out.println("=== 🔍 Cliente de Consulta de Votante ===");
+            System.out.println("===  Cliente de Consulta de Votante ===");
             initializeQueryLog();
 
             while (true) {
@@ -43,12 +43,12 @@ public class QueryClient {
                     System.out.println("→ Estado: " + result);
                     logQuery(document, result);
                 } else {
-                    System.out.println("⚠️ Opción inválida");
+                    System.out.println(" Opción inválida");
                 }
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error en cliente de consulta: " + e.getMessage());
+            System.err.println(" Error en cliente de consulta: " + e.getMessage());
             e.printStackTrace();
         }
     }
