@@ -1,5 +1,3 @@
-package server.test;
-
 import server.Database;
 
 import java.sql.Connection;
