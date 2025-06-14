@@ -7,6 +7,8 @@ import common.VoteStationPrx;
 import utils.HmacUtil;
 import utils.SecurityConfig;
 
+import java.io.File;
+
 public class TestClient {
     public static void main(String[] args) {
         try (Communicator communicator = Util.initialize(args)) {
@@ -17,44 +19,59 @@ public class TestClient {
                 throw new Error("Proxy inválido: no se pudo castear a VoteStationPrx.");
             }
 
-            System.out.println("--- Cliente de Prueba Iniciado ---");
+            System.out.println("--- 🧪 Cliente de Pruebas Iniciado ---");
 
-            int stationId = 1; // Debe coincidir con el assigned_station_id en la tabla voters
+            int stationId = 1;
             String[] documents = {"112233", "445566", "778899"};
             int[] candidateIds = {101, 102, 102};
 
             for (int i = 0; i < documents.length; i++) {
-                String doc = documents[i];
-                int cid = candidateIds[i];
-                String data = doc + cid + stationId;
-
-                // Generar HMAC
-                String hmac = HmacUtil.generateHmac(data, SecurityConfig.HMAC_SECRET);
-
-                System.out.printf("\n[TEST %d] Voto para '%s'...\n", i + 1, doc);
-                boolean result = voteStation.vote(doc, cid, stationId, hmac);
-                System.out.println("Resultado: " + (result ? "✅ ÉXITO" : "❌ FALLO"));
+                runVoteTest(voteStation, i + 1, documents[i], candidateIds[i], stationId, true);
             }
 
-            // Intentar voto duplicado para el primero
-            String duplicateDoc = documents[0];
-            int duplicateCid = candidateIds[0];
-            String dupData = duplicateDoc + duplicateCid + stationId;
-            String dupHmac = HmacUtil.generateHmac(dupData, SecurityConfig.HMAC_SECRET);
-
-            System.out.println("\n[TEST DUPLICADO] Voto repetido para '" + duplicateDoc + "'...");
-            boolean dupResult = voteStation.vote(duplicateDoc, duplicateCid, stationId, dupHmac);
-            System.out.println("Resultado: " + (dupResult ? "✅ ÉXITO" : "❌ FALLO"));
+            // Test de voto duplicado
+            runVoteTest(voteStation, -1, documents[0], candidateIds[0], stationId, false);
 
             // Generar reporte
-            System.out.println("\n[REPORTE] Generando archivo resumen...");
+            System.out.println("\n[REPORTE] Solicitando generación de resumen...");
             voteStation.generateReport();
 
-            System.out.println("\n--- Pruebas Finalizadas ---");
+            File reportFile = new File("resume.csv");
+            if (reportFile.exists() && reportFile.length() > 0) {
+                System.out.println("✅ Reporte generado exitosamente: resume.csv");
+            } else {
+                System.out.println("❌ Error: archivo de resumen no generado o vacío.");
+            }
+
+            System.out.println("\n--- ✅ Todas las pruebas finalizadas ---");
 
         } catch (Exception e) {
-            System.err.println("Error en el cliente de prueba: " + e.getMessage());
+            System.err.println("❌ Error en el cliente de prueba: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+    private static void runVoteTest(VoteStationPrx voteStation, int testId, String document, int candidateId, int stationId, boolean expectedSuccess) {
+        String label = (testId > 0) ? "[TEST " + testId + "]" : "[TEST DUPLICADO]";
+        System.out.printf("\n%s Voto para '%s'...\n", label, document);
+
+        try {
+            String data = document + candidateId + stationId;
+            String hmac = HmacUtil.generateHmac(data, SecurityConfig.HMAC_SECRET);
+
+            boolean result = voteStation.vote(document, candidateId, stationId, hmac);
+            boolean passed = result == expectedSuccess;
+
+            System.out.printf("%s Resultado: %s | Esperado: %s\n",
+                    passed ? "✅ PASÓ" : "❌ FALLÓ",
+                    result ? "✅ ÉXITO" : "❌ FALLO",
+                    expectedSuccess ? "✅" : "❌");
+
+        } catch (Exception e) {
+            System.out.printf("❌ ERROR durante el test '%s': %s\n", label, e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }
+

@@ -15,6 +15,8 @@ import java.util.Date;
 
 public class TestClientFraude {
     public static void main(String[] args) {
+        System.out.println("--- 🛡️ Cliente de Pruebas de Seguridad ---");
+
         try (Communicator communicator = Util.initialize(args)) {
 
             ObjectPrx base = communicator.stringToProxy("VoteStation:default -p 10000");
@@ -24,59 +26,62 @@ public class TestClientFraude {
                 throw new Error("Proxy inválido: no se pudo castear a VoteStationPrx.");
             }
 
-            System.out.println("--- Cliente de Pruebas de Seguridad ---");
-
             String csvFile = "fraude_tests.csv";
             PrintWriter csvWriter = new PrintWriter(new FileWriter(csvFile, false));
-            csvWriter.println("timestamp,test_id,document,station_id,result");
+            csvWriter.println("timestamp,test_id,document,station_id,result,expected");
 
             String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-            // Prueba 1: Voto válido
-            int estacionCorrecta = 1;
-            String doc1 = "556677";
-            int candidate1 = 101;
-            String hmac1 = HmacUtil.generateHmac(doc1 + candidate1 + estacionCorrecta, SecurityConfig.HMAC_SECRET);
+            // ✅ Test 1: Voto válido
+            runFraudTest(csvWriter, voteStation, "TEST1", "556677", 101, 1, true, now, "Voto válido");
 
-            System.out.println("\n[TEST 1] Voto válido de '" + doc1 + "' en estación " + estacionCorrecta);
-            boolean t1 = voteStation.vote(doc1, candidate1, estacionCorrecta, hmac1);
-            csvWriter.printf("%s,TEST1,%s,%d,%s%n", now, doc1, estacionCorrecta, (t1 ? "EXITO" : "FALLO"));
+            // ❌ Test 2: Duplicado
+            runFraudTest(csvWriter, voteStation, "TEST2", "556677", 101, 1, false, now, "Voto duplicado");
 
-            // Prueba 2: Voto duplicado
-            String hmac2 = HmacUtil.generateHmac(doc1 + candidate1 + estacionCorrecta, SecurityConfig.HMAC_SECRET);
-            System.out.println("\n[TEST 2] Voto duplicado de '" + doc1 + "' en estación " + estacionCorrecta);
-            boolean t2 = voteStation.vote(doc1, candidate1, estacionCorrecta, hmac2);
-            csvWriter.printf("%s,TEST2,%s,%d,%s%n", now, doc1, estacionCorrecta, (t2 ? "EXITO" : "FALLO"));
+            // ❌ Test 3: Estación incorrecta
+            runFraudTest(csvWriter, voteStation, "TEST3", "778899", 102, 2, false, now, "Estación incorrecta");
 
-            // Prueba 3: Estación incorrecta
-            int estacionIncorrecta = 2;
-            String doc2 = "778899";
-            int candidate2 = 102;
-            String hmac3 = HmacUtil.generateHmac(doc2 + candidate2 + estacionIncorrecta, SecurityConfig.HMAC_SECRET);
-
-            System.out.println("\n[TEST 3] Intento de '" + doc2 + "' en estación INCORRECTA (esperada 1, se usa 2)");
-            boolean t3 = voteStation.vote(doc2, candidate2, estacionIncorrecta, hmac3);
-            csvWriter.printf("%s,TEST3,%s,%d,%s%n", now, doc2, estacionIncorrecta, (t3 ? "EXITO" : "FALLO"));
-
-            // Prueba 4: Documento no registrado
-            String docInvalido = "999000";
-            int candidate3 = 102;
-            int stationInvalida = 1;
-            String hmac4 = HmacUtil.generateHmac(docInvalido + candidate3 + stationInvalida, SecurityConfig.HMAC_SECRET);
-
-            System.out.println("\n[TEST 4] Documento no registrado '" + docInvalido + "'");
-            boolean t4 = voteStation.vote(docInvalido, candidate3, stationInvalida, hmac4);
-            csvWriter.printf("%s,TEST4,%s,%d,%s%n", now, docInvalido, stationInvalida, (t4 ? "EXITO" : "FALLO"));
+            // ❌ Test 4: Documento no registrado
+            runFraudTest(csvWriter, voteStation, "TEST4", "999000", 102, 1, false, now, "Documento no registrado");
 
             csvWriter.close();
-            System.out.println("\n--- Fin de pruebas de seguridad ---");
-            System.out.println("Resultados exportados a: " + csvFile);
+            System.out.println("\n✅ Resultados exportados a: " + csvFile);
+            System.out.println("--- ✅ Fin de pruebas de seguridad ---");
 
         } catch (IOException e) {
-            System.err.println("Error al escribir CSV: " + e.getMessage());
+            System.err.println("❌ Error al escribir CSV: " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("Error en cliente de prueba: " + e.getMessage());
+            System.err.println("❌ Error en cliente de prueba: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private static void runFraudTest(PrintWriter csvWriter, VoteStationPrx station, String testId, String doc,
+                                     int candidateId, int stationId, boolean expected, String timestamp, String label) {
+        try {
+            String data = doc + candidateId + stationId;
+            String hmac = HmacUtil.generateHmac(data, SecurityConfig.HMAC_SECRET);
+            boolean result = station.vote(doc, candidateId, stationId, hmac);
+
+            boolean passed = result == expected;
+            System.out.printf("[%s] %s → Resultado: %s | Esperado: %s => %s%n",
+                    testId,
+                    label,
+                    result ? "✅ EXITO" : "❌ FALLO",
+                    expected ? "✅ EXITO" : "❌ FALLO",
+                    passed ? "✅ PASÓ" : "❌ FALLÓ"
+            );
+
+            csvWriter.printf("%s,%s,%s,%d,%s,%s%n",
+                    timestamp,
+                    testId,
+                    doc,
+                    stationId,
+                    result ? "EXITO" : "FALLO",
+                    expected ? "EXITO" : "FALLO"
+            );
+        } catch (Exception e) {
+            System.err.println("❌ Error en test " + testId + ": " + e.getMessage());
         }
     }
 }

@@ -29,12 +29,16 @@ public class VoteStationImpl implements VoteStation {
 
         String data = document + candidateId + stationId;
         try {
-            boolean isValid = utils.HmacUtil.verifyHmac(data, utils.SecurityConfig.HMAC_SECRET, hmac);
 
-            if (!isValid) {
+            String expectedHmac = utils.HmacUtil.generateHmac(data, utils.SecurityConfig.HMAC_SECRET);
+            System.out.println("🧪 HMAC esperado  : " + expectedHmac);
+            System.out.println("📩 HMAC recibido  : " + hmac);
+
+            if (!expectedHmac.equals(hmac)) {
                 System.out.println("-> ❌ HMAC inválido. Posible intento de manipulación.");
                 return false;
             }
+
         } catch (Exception e) {
             System.out.println("-> ❌ Error al validar HMAC: " + e.getMessage());
             return false;
