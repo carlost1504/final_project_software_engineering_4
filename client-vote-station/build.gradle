@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation project(':common')
     implementation 'com.zeroc:ice:3.7.10'
+    implementation project(path: ':server-central')
 }
 
 java {

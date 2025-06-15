@@ -7,9 +7,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-public class QueryStationImpl implements QueryStation {
+public class QueryStationImpl {
 
-    @Override
+
     public String query(String document, Current current) {
         try (Connection conn = Database.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(

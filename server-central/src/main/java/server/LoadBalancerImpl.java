@@ -1,54 +1,53 @@
+// Ruta: server-central/src/main/java/server/LoadBalancerImpl.java
 package server;
 
 import com.zeroc.Ice.Current;
 import common.LoadBalancer;
 import common.QueryStationPrx;
 import common.VoteStationPrx;
-
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Implementación del balanceador de carga para estaciones de votación y consulta.
- * Asigna estaciones activas usando round-robin.
- */
 public class LoadBalancerImpl implements LoadBalancer {
 
-    private final List<VoteStationPrx> voteStations = new ArrayList<>();
-    private final List<QueryStationPrx> queryStations = new ArrayList<>();
-    private final AtomicInteger voteIndex = new AtomicInteger(0);
-    private final AtomicInteger queryIndex = new AtomicInteger(0);
+    // Usamos listas thread-safe. Son más eficientes que sincronizar todo el método.
+    private final List<VoteStationPrx> voteStations = new CopyOnWriteArrayList<>();
+    private final List<QueryStationPrx> queryStations = new CopyOnWriteArrayList<>();
+
+    // AtomicInteger es thread-safe para contadores.
+    private final AtomicInteger voteCounter = new AtomicInteger(0);
+    private final AtomicInteger queryCounter = new AtomicInteger(0);
 
     @Override
-    public synchronized void addVoteStation(VoteStationPrx station, Current current) {
+    public void addVoteStation(VoteStationPrx station, Current current) {
+        System.out.println("➕ [Broker] Registrando nueva Mesa de Votación. Total: " + (voteStations.size() + 1));
         voteStations.add(station);
-        System.out.println(" Nueva VoteStation registrada. Total: " + voteStations.size());
     }
 
     @Override
-    public synchronized void addQueryStation(QueryStationPrx station, Current current) {
+    public void addQueryStation(QueryStationPrx station, Current current) {
+        System.out.println("➕ [Broker] Registrando nueva Estación de Consulta. Total: " + (queryStations.size() + 1));
         queryStations.add(station);
-        System.out.println(" Nueva QueryStation registrada. Total: " + queryStations.size());
     }
 
     @Override
     public VoteStationPrx getVoteStation(Current current) {
         if (voteStations.isEmpty()) {
-            System.out.println(" No hay estaciones de voto disponibles.");
+            System.err.println("⚠️  [Broker] Petición de Mesa de Votación, pero no hay ninguna registrada.");
             return null;
         }
-        int index = voteIndex.getAndUpdate(i -> (i + 1) % voteStations.size());
+        int index = voteCounter.getAndIncrement() % voteStations.size();
         return voteStations.get(index);
     }
 
     @Override
     public QueryStationPrx getQueryStation(Current current) {
         if (queryStations.isEmpty()) {
-            System.out.println(" No hay estaciones de consulta disponibles.");
+            System.err.println("⚠️  [Broker] Petición de Estación de Consulta, pero no hay ninguna registrada.");
             return null;
         }
-        int index = queryIndex.getAndUpdate(i -> (i + 1) % queryStations.size());
+        int index = queryCounter.getAndIncrement() % queryStations.size();
         return queryStations.get(index);
     }
 }
