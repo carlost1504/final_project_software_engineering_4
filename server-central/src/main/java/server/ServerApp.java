@@ -3,6 +3,8 @@
 package server;
 
 import com.zeroc.Ice.*;
+import server.impl.QueryStationImpl;
+import server.impl.VoteStationImpl;
 
 public class ServerApp {
     public static void main(String[] args) {

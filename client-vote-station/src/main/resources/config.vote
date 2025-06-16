@@ -1,0 +1,5 @@
+# IP local asignada por ZeroTier a esta estación de votación
+VoteStationAdapter.Endpoints=tcp -h 10.147.5.21 -p 12000
+
+# Proxy del LoadBalancer en el servidor central
+LoadBalancer.Proxy=LoadBalancer:default -h 10.147.5.10 -p 11000

@@ -1,8 +1,9 @@
 // server-central/src/main/java/server/VoteStationImpl.java
-package server;
+package server.impl;
 
 import com.zeroc.Ice.Current;
 import common.VoteStation;
+import server.VoteManager;
 
 /**
  * Implementación de la interfaz remota VoteStation definida en ICE.

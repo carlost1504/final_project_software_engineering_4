@@ -1,0 +1,5 @@
+# IP local asignada por ZeroTier a esta estación de consulta
+QueryStationAdapter.Endpoints=tcp -h 10.147.5.22 -p 13000
+
+# Proxy del LoadBalancer en el servidor central
+LoadBalancer.Proxy=LoadBalancer:default -h 10.147.5.10 -p 11000

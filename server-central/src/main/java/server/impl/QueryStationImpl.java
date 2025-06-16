@@ -1,7 +1,8 @@
-package server;
+package server.impl;
 
 import com.zeroc.Ice.Current;
 import common.QueryStation;
+import server.Database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

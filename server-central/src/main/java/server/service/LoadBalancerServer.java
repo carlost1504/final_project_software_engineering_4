@@ -1,9 +1,10 @@
-package server;
+package server.service;
 
 import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.ObjectAdapter;
 import com.zeroc.Ice.Util;
 import common.LoadBalancer;
+import server.impl.LoadBalancerImpl;
 
 public class LoadBalancerServer {
     public static void main(String[] args) {

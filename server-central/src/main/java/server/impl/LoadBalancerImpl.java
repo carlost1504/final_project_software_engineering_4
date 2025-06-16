@@ -1,4 +1,4 @@
-package server;
+package server.impl;
 
 import com.zeroc.Ice.Current;
 import common.LoadBalancer;
