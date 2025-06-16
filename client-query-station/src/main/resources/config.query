@@ -2,4 +2,4 @@
 QueryStationAdapter.Endpoints=tcp -h 10.147.5.22 -p 13000
 
 # Proxy del LoadBalancer en el servidor central
-LoadBalancer.Proxy=LoadBalancer:default -h 10.147.5.10 -p 11000
+LoadBalancer.Proxy=LoadBalancer:default -h 127.0.0.1 -p 11000

@@ -18,3 +18,13 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
+
+tasks.register('runMultiQuerySimulator', JavaExec) {
+    group = 'application'
+    description = 'Ejecuta simulador de múltiples clientes de consulta'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('client.query.MultiQuerySimulator')
+    args 'config.query', '5', '10'  // puedes modificar estos valores
+}
+
+

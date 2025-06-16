@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'application' // este debe estar aquí
+    id 'application'
 }
 
 group = 'co.votingsystem'
@@ -20,7 +20,47 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-// Esta parte declara la clase principal para correr el cliente
+// ❗️Clase principal por defecto (puedes dejar VoteClient u otra por defecto)
 application {
-    mainClassName = 'client.vote.RegisterStationsClient' // usa mainClassName si estás en Gradle <7
+    mainClass = 'client.vote.VoteClient'
 }
+
+// ✅ Task para ejecutar VoteClient
+tasks.register('runVoteClient', JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el cliente de votación'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('client.vote.VoteClient')
+    args '--Ice.Config=config.vote'
+}
+
+// ✅ Task para ejecutar RegisterStationsClient
+tasks.register('runRegisterStation', JavaExec) {
+    group = 'application'
+    description = 'Registra la estación de votación en el LoadBalancer'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('client.vote.RegisterStationsClient')
+    args '--Ice.Config=config.vote'
+}
+
+
+tasks.register('copyVoteConfig', Copy) {
+    from('src/main/resources/config.vote')
+    into("$buildDir/generated-config")
+}
+
+tasks.register('runMultiVoteSimulator', JavaExec) {
+    group = 'application'
+    description = 'Ejecuta múltiples votos simulados'
+    dependsOn 'copyVoteConfig'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('client.vote.MultiVoteSimulator')
+    // Referencia al archivo en el nuevo destino seguro
+    args "$buildDir/generated-config/config.vote", '5', '10'
+}
+
+
+
+
+
+

@@ -1,5 +1,3 @@
-// server-central/build.gradle
-
 plugins {
     id 'application'
 }
@@ -11,22 +9,77 @@ dependencies {
 }
 
 application {
-    mainClass = 'server.service.LoadBalancerServer'
+    mainClass = 'server.ServerApp' // default
 }
 
-
-// ✅ Tarea para correr el servidor
-task runServer(type: JavaExec) {
+// ✅ Tarea para correr el servidor principal
+tasks.register('runServerApp', JavaExec) {
     group = "Application"
-    description = "Ejecuta el servidor ICE."
+    description = "Ejecuta el servidor principal ServerApp."
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'server.ServerApp'
 }
 
-// ✅ Tarea para correr el cliente de prueba
-task runTestClient(type: JavaExec) {
+// ✅ Tarea para correr el LoadBalancerServer
+tasks.register('runLoadBalancer', JavaExec) {
     group = "Application"
-    description = "Ejecuta el cliente de prueba."
+    description = "Ejecuta LoadBalancerServer."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.LoadBalancerServer'
+}
+
+// ✅ Tarea para correr el VoteStationServer
+tasks.register('runVoteStation', JavaExec) {
+    group = "Application"
+    description = "Ejecuta VoteStationServer."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.VoteStationServer'
+}
+
+// ✅ Tarea para correr el QueryStationServer
+tasks.register('runQueryStation', JavaExec) {
+    group = "Application"
+    description = "Ejecuta QueryStationServer."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.QueryStationServer'
+}
+
+// ✅ Tarea para correr el cliente de prueba principal
+tasks.register('runTestClient', JavaExec) {
+    group = "Application"
+    description = "Ejecuta TestClient."
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'server.TestClient'
 }
+
+// ✅ Tarea para pruebas específicas
+tasks.register('runTestClientFraude', JavaExec) {
+    group = "Application"
+    description = "Ejecuta TestClientFraude."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.TestClientFraude'
+}
+
+tasks.register('runTestClientQuery', JavaExec) {
+    group = "Application"
+    description = "Ejecuta TestClientQuery."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.TestClientQuery'
+}
+
+tasks.register('runDBTest', JavaExec) {
+    group = "Application"
+    description = "Ejecuta pruebas sobre Database."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'server.DBTest'
+}
+
+
+tasks.register('runLoadBalancerServer', JavaExec) {
+    group = 'application'
+    description = 'Inicia el servidor LoadBalancer'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('server.service.LoadBalancerServer')  // ✅ esta es la ruta real
+    args '--Ice.Config=config.server'
+}
+
