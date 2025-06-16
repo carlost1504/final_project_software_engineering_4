@@ -12,10 +12,10 @@ public class VoteStationServer {
             adapter.add(new VoteStationImpl(), Util.stringToIdentity("VoteStation"));
             adapter.activate();
 
-            System.out.println("🗳️ VoteStationServer activo en puerto 12000...");
+            System.out.println(" VoteStationServer activo en puerto 12000...");
             communicator.waitForShutdown();
         } catch (Exception e) {
-            System.err.println("❌ Error en VoteStationServer: " + e.getMessage());
+            System.err.println("Error en VoteStationServer: " + e.getMessage());
             e.printStackTrace();
         }
     }

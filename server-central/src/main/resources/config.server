@@ -1,5 +1,5 @@
 # Adaptador para el balanceador de carga
-LoadBalancerAdapter.Endpoints=default -p 11000
+LoadBalancerAdapter.Endpoints=tcp -h 127.0.0.1 -p 11000
 LoadBalancerAdapter.ThreadPool.Size=5
 
 # Para ver más detalles en consola (opcional)

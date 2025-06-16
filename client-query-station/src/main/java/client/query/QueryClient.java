@@ -16,7 +16,7 @@ import java.util.Scanner;
 public class QueryClient {
     public static void main(String[] args) {
         try (Communicator communicator = Util.initialize(args)) {
-            ObjectPrx base = communicator.stringToProxy("QueryStation:default -p 10000");
+            ObjectPrx base = communicator.stringToProxy("QueryStation:default -p 13000");
             QueryStationPrx queryStation = QueryStationPrx.checkedCast(base);
 
             if (queryStation == null) {
@@ -24,23 +24,23 @@ public class QueryClient {
             }
 
             Scanner sc = new Scanner(System.in);
-            System.out.println("===  Cliente de Consulta de Votante ===");
+            System.out.println("=== Cliente de Consulta de Votante ===");
             initializeQueryLog();
 
             while (true) {
-                System.out.println("\n1. Consultar documento");
-                System.out.println("0. Salir");
+                System.out.println("\n1.  Consultar documento");
+                System.out.println("0.  Salir");
                 System.out.print("Seleccione una opción: ");
                 String opcion = sc.nextLine().trim();
 
                 if (opcion.equals("0")) {
-                    System.out.println("Saliendo...");
+                    System.out.println(" Saliendo...");
                     break;
                 } else if (opcion.equals("1")) {
-                    System.out.print("Documento: ");
+                    System.out.print(" Documento: ");
                     String document = sc.nextLine().trim();
                     String result = queryStation.query(document);
-                    System.out.println("→ Estado: " + result);
+                    mostrarResultado(document, result);
                     logQuery(document, result);
                 } else {
                     System.out.println(" Opción inválida");
@@ -53,12 +53,19 @@ public class QueryClient {
         }
     }
 
+    private static void mostrarResultado(String document, String result) {
+        System.out.println("\n Resultado de la consulta para el documento " + document + ":");
+        System.out.println("--------------------------------------------------");
+        System.out.println(" Estado: " + result);
+        System.out.println("--------------------------------------------------");
+    }
+
     private static void logQuery(String document, String result) {
         try (PrintWriter writer = new PrintWriter(new FileWriter("query_logs.csv", true))) {
             String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             writer.printf("%s,%s,%s%n", timestamp, document, result.replace(",", " ")); // evita romper CSV
         } catch (IOException e) {
-            System.err.println("Error al escribir en query_logs.csv: " + e.getMessage());
+            System.err.println(" Error al escribir en query_logs.csv: " + e.getMessage());
         }
     }
 
@@ -71,10 +78,9 @@ public class QueryClient {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error al inicializar query_logs.csv: " + e.getMessage());
+            System.err.println(" Error al inicializar query_logs.csv: " + e.getMessage());
         }
     }
-
-
 }
+
 

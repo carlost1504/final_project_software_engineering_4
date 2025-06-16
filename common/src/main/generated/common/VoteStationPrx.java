@@ -96,6 +96,43 @@ public interface VoteStationPrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    default String[] getCandidates()
+    {
+        return getCandidates(com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default String[] getCandidates(java.util.Map<String, String> context)
+    {
+        return _iceI_getCandidatesAsync(context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<String[]> getCandidatesAsync()
+    {
+        return _iceI_getCandidatesAsync(com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<String[]> getCandidatesAsync(java.util.Map<String, String> context)
+    {
+        return _iceI_getCandidatesAsync(context, false);
+    }
+
+    /**
+     * @hidden
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<String[]> _iceI_getCandidatesAsync(java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<String[]> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "getCandidates", null, sync, null);
+        f.invoke(true, context, null, null, istr -> {
+                     String[] ret;
+                     ret = istr.readStringSeq();
+                     return ret;
+                 });
+        return f;
+    }
+
     /**
      * Contacts the remote server to verify that the object implements this type.
      * Raises a local exception if a communication error occurs.

@@ -20,7 +20,7 @@ public class RegisterQueryStationClient {
             }
 
             // Proxy local de esta estación de consulta
-            ObjectPrx baseQueryStation = communicator.stringToProxy("QueryStation:default -p 12000");
+            ObjectPrx baseQueryStation = communicator.stringToProxy("QueryStation:default -p 13000");
             QueryStationPrx queryStation = QueryStationPrx.checkedCast(baseQueryStation);
 
             if (queryStation == null) {

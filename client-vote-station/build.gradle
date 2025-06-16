@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application' // este debe estar aquí
 }
 
 group = 'co.votingsystem'
@@ -17,4 +18,9 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Esta parte declara la clase principal para correr el cliente
+application {
+    mainClassName = 'client.vote.RegisterStationsClient' // usa mainClassName si estás en Gradle <7
 }

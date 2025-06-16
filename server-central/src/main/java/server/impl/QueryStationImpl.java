@@ -14,26 +14,31 @@ public class QueryStationImpl implements QueryStation {
     public String query(String document, Current current) {
         try (Connection conn = Database.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT is_enabled, has_voted, assigned_station_id FROM voters WHERE document = ?"
+                    "SELECT v.is_enabled, v.has_voted, s.station_id, s.location " +
+                            "FROM voters v " +
+                            "JOIN stations s ON v.assigned_station_id = s.station_id " +
+                            "WHERE v.document = ?"
             );
             stmt.setString(1, document);
             ResultSet rs = stmt.executeQuery();
 
             if (!rs.next()) {
-                return " Documento no registrado.";
+                return "Documento no registrado.";
             }
 
             boolean isEnabled = rs.getBoolean("is_enabled");
             boolean hasVoted = rs.getBoolean("has_voted");
-            int assignedStationId = rs.getInt("assigned_station_id");
+            int stationId = rs.getInt("station_id");
+            String location = rs.getString("location");
 
-            if (!isEnabled) return " Votante no habilitado.";
-            if (hasVoted) return " Ya ha votado.";
-            return " Habilitado. Estación asignada: " + assignedStationId;
+            if (!isEnabled) return "Votante no habilitado.";
+            if (hasVoted) return "Ya ha votado.";
+
+            return String.format("Habilitado para votar.\n Mesa: %d\n Ubicación: %s", stationId, location);
 
         } catch (Exception e) {
             System.err.println("Error en consulta de votante: " + e.getMessage());
-            return " Error interno al consultar el estado del votante.";
+            return "Error interno al consultar el estado del votante.";
         }
     }
 }

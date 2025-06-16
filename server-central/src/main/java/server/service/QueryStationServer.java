@@ -12,10 +12,10 @@ public class QueryStationServer {
             adapter.add(new QueryStationImpl(), Util.stringToIdentity("QueryStation"));
             adapter.activate();
 
-            System.out.println("🔍 QueryStationServer activo en puerto 13000...");
+            System.out.println("QueryStationServer activo en puerto 13000...");
             communicator.waitForShutdown();
         } catch (Exception e) {
-            System.err.println("❌ Error en QueryStationServer: " + e.getMessage());
+            System.err.println("Error en QueryStationServer: " + e.getMessage());
             e.printStackTrace();
         }
     }

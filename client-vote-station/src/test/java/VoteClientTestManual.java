@@ -1,7 +1,6 @@
 import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.ObjectPrx;
 import com.zeroc.Ice.Util;
-import common.VoteStationPrx;
 import utils.HmacUtil;
 import utils.SecurityConfig;
 

@@ -7,12 +7,10 @@ import common.VoteStationPrx;
 import utils.HmacUtil;
 import utils.SecurityConfig;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import java.util.Scanner;
 
 public class VoteClient {
@@ -25,8 +23,14 @@ public class VoteClient {
                 throw new Error("Proxy inválido.");
             }
 
+            int stationId = readStationIdFromConfig();
+            if (stationId == -1) {
+                System.err.println("No se pudo obtener el ID de estación desde config.vote.");
+                return;
+            }
+
             Scanner sc = new Scanner(System.in);
-            System.out.println("===  Cliente de Votación ===");
+            System.out.println("=== Cliente de Votación ===");
             initializeVoteLog();
 
             while (true) {
@@ -40,28 +44,51 @@ public class VoteClient {
                     System.out.println("Saliendo...");
                     break;
                 } else if (opcion.equals("1")) {
+                    mostrarCandidatos(voteStation);
                     System.out.print("Documento: ");
                     String document = sc.nextLine().trim();
                     System.out.print("ID Candidato: ");
                     int candidateId = Integer.parseInt(sc.nextLine().trim());
-                    System.out.print("ID Estación: ");
-                    int stationId = Integer.parseInt(sc.nextLine().trim());
 
                     String hmac = HmacUtil.generateHmac(document + candidateId + stationId, SecurityConfig.HMAC_SECRET);
                     boolean success = voteStation.vote(document, candidateId, stationId, hmac);
-                    System.out.println("→ Resultado: " + (success ? " Voto registrado" : " Voto rechazado"));
+                    System.out.println("→ Resultado: " + (success ? "Voto registrado" : "Voto rechazado"));
                     logVote(document, candidateId, stationId, success);
 
                 } else if (opcion.equals("2")) {
                     voteStation.generateReport();
                 } else {
-                    System.out.println(" Opción inválida");
+                    System.out.println("Opción inválida");
                 }
             }
 
         } catch (Exception e) {
-            System.err.println(" Error en cliente de votación: " + e.getMessage());
+            System.err.println("Error en cliente de votación: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private static int readStationIdFromConfig() {
+        try (InputStream input = VoteClient.class.getClassLoader().getResourceAsStream("config.vote")) {
+            Properties prop = new Properties();
+            prop.load(input);
+            return Integer.parseInt(prop.getProperty("station.id").trim());
+        } catch (Exception e) {
+            System.err.println("Error al leer station.id de config.vote: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    private static void mostrarCandidatos(VoteStationPrx voteStation) {
+        try {
+            String[] candidatos = voteStation.getCandidates();
+            System.out.println("\n--- Candidatos Disponibles ---");
+            for (String c : candidatos) {
+                System.out.println(c);
+            }
+            System.out.println("-------------------------------");
+        } catch (Exception e) {
+            System.err.println("Error al obtener candidatos del servidor: " + e.getMessage());
         }
     }
 
@@ -87,4 +114,3 @@ public class VoteClient {
         }
     }
 }
-

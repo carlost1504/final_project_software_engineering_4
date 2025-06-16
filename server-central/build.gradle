@@ -11,7 +11,7 @@ dependencies {
 }
 
 application {
-    mainClass = 'server.LoadBalancerServer'
+    mainClass = 'server.service.LoadBalancerServer'
 }
 
 

@@ -3,7 +3,14 @@ package server.impl;
 
 import com.zeroc.Ice.Current;
 import common.VoteStation;
+import server.Database;
 import server.VoteManager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Implementación de la interfaz remota VoteStation definida en ICE.
@@ -53,6 +60,26 @@ public class VoteStationImpl implements VoteStation {
 
         return success;
     }
+
+    @Override
+    public String[] getCandidates(Current current) {
+        List<String> candidatos = new ArrayList<>();
+        try (Connection conn = Database.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT candidate_id, name, party FROM candidates");
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                candidatos.add("ID: " + rs.getInt("candidate_id") +
+                        " | Nombre: " + rs.getString("name") +
+                        " | Partido: " + rs.getString("party"));
+            }
+        } catch (Exception e) {
+            System.err.println("Error al consultar candidatos: " + e.getMessage());
+        }
+        return candidatos.toArray(new String[0]);  // Conversión correcta
+    }
+
+
+
 
 
 
