@@ -1,0 +1,2 @@
+QueryCacheAdapter.Endpoints=tcp -h 127.0.0.1 -p 14000
+RealQueryStation.Proxy=QueryStation:default -p 13000
