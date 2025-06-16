@@ -11,4 +11,11 @@ allprojects {
             languageVersion = JavaLanguageVersion.of(17)
         }
     }
+
+    subprojects {
+        // Le decimos a la tarea de compilación de Java que use siempre UTF-8
+        tasks.withType(JavaCompile) {
+            options.encoding = 'UTF-8'
+        }
+    }
 }

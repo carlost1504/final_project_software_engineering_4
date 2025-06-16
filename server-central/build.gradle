@@ -82,4 +82,3 @@ tasks.register('runLoadBalancerServer', JavaExec) {
     mainClass.set('server.service.LoadBalancerServer')  // ✅ esta es la ruta real
     args '--Ice.Config=config.server'
 }
-

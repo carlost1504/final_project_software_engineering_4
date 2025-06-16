@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'co.votingsystem'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Necesario para usar las interfaces de Ice (QueryCache, QueryStation, etc.)
+    implementation project(':common')
+
+    // Dependencia principal de Ice
+    implementation 'com.zeroc:ice:3.7.10'
+
+    // ¡NUEVO! Añadimos la librería para la caché en memoria (Caffeine)
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
+    // Ya no necesitamos la dependencia de PostgreSQL aquí
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Apuntamos a la nueva clase principal del servidor de caché
+application {
+    mainClass = 'cache.QueryCacheServer'
+}
+
+// Tarea opcional para ejecutar este servidor de forma explícita
+tasks.register('runQueryCacheServer', JavaExec) {
+    group = "Application"
+    description = "Ejecuta el servidor del Proxy de Caché."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('cache.QueryCacheServer')
+    // Usará el archivo de configuración que creaste para él
+    args '--Ice.Config=src/main/resources/config.cache'
+}

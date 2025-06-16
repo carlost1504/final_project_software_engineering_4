@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/client-vote-station" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/server-central" />
+            <option value="$PROJECT_DIR$/server-query-cache" />
           </set>
         </option>
       </GradleProjectSettings>

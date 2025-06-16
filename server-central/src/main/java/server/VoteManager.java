@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.io.IOException;
+import utils.HmacUtil;
+import utils.SecurityConfig;
 
 /**
  * Clase que gestiona la lógica principal del sistema de votación.
@@ -24,7 +26,6 @@ public class VoteManager {
 
     private VoteManager() {
         initializeCSVFiles();
-
     }
 
     /**
@@ -36,15 +37,30 @@ public class VoteManager {
     }
 
     /**
-     * Procesa el voto de un ciudadano. Verifica condiciones de elegibilidad y registro previo.
+     * Procesa el voto de un ciudadano. Verifica la firma HMAC, condiciones de elegibilidad y registro previo.
      * Si el voto es válido, se almacena en la base de datos y se registra en un archivo CSV parcial.
      * @param document Documento del votante
      * @param candidateId ID del candidato
      * @param stationId ID de la estación de votación
+     * @param hmac Firma de seguridad para verificar la integridad del voto
      * @return true si el voto fue aceptado, false en caso contrario
      */
-    public boolean processVote(String document, int candidateId, int stationId) {
+    public boolean processVote(String document, int candidateId, int stationId, String hmac) {
         System.out.println("[VoteManager] Iniciando validación de voto para: " + document);
+
+        // --- BLOQUE DE VERIFICACIÓN DE HMAC ---
+        // Asegura que el voto que viene de la cola es legítimo.
+        try {
+            String dataToVerify = document + candidateId + stationId;
+            if (!HmacUtil.verifyHmac(dataToVerify, hmac, SecurityConfig.HMAC_SECRET)) {
+                System.err.println("❌ FRAUDE DETECTADO: HMAC inválido para el documento: " + document);
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error crítico al verificar HMAC: " + e.getMessage());
+            return false;
+        }
+        // --- FIN DEL BLOQUE AÑADIDO ---
 
         try (Connection conn = Database.getConnection()) {
 
@@ -119,14 +135,8 @@ public class VoteManager {
         }
     }
 
-
     /**
      * Registra eventos de seguridad como intentos de voto inválido o repetido.
-     * @param conn Conexión activa a la base de datos
-     * @param document Documento del votante
-     * @param eventType Tipo de evento (ej. VOTO_MULTIPLE)
-     * @param description Descripción del evento
-     * @param stationId Estación desde la que ocurrió el evento
      */
     private void logSecurityEvent(Connection conn, String document, String eventType, String description, int stationId) {
         try (PreparedStatement stmt = conn.prepareStatement(
@@ -142,7 +152,7 @@ public class VoteManager {
     }
 
     /**
-     * Inicializa los archivos CSV con cabeceras. Se ejecuta al iniciar el sistema.
+     * Inicializa los archivos CSV con cabeceras.
      */
     private void initializeCSVFiles() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(PARTIAL_CSV_FILENAME, false))) {
@@ -160,8 +170,6 @@ public class VoteManager {
 
     /**
      * Registra cada voto aceptado en el archivo partial_votes.csv.
-     * @param document Documento del votante
-     * @param candidateId ID del candidato votado
      */
     private synchronized void logVoteToPartialCSV(String document, int candidateId) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(PARTIAL_CSV_FILENAME, true))) {
@@ -174,7 +182,6 @@ public class VoteManager {
 
     /**
      * Genera el reporte resumen de votos por candidato a partir de la base de datos.
-     * Se guarda como archivo CSV llamado resume.csv
      */
     public void generateResumeCSV() {
         try (Connection conn = Database.getConnection();
@@ -200,5 +207,18 @@ public class VoteManager {
         } catch (Exception e) {
             System.err.println("Error al generar el resumen: " + e.getMessage());
         }
+    }
+
+    /**
+     * Devuelve una lista de candidatos para que el cliente pueda mostrarla.
+     * @return Un arreglo de strings con los candidatos.
+     */
+    public String[] getCandidateList() {
+        // Por ahora, es una lista fija. En el futuro, podría venir de la tabla 'candidates'.
+        return new String[] {
+                "ID: 101 - Ada Lovelace",
+                "ID: 102 - Grace Hopper",
+                "ID: 999 - Voto en Blanco"
+        };
     }
 }

@@ -23,7 +23,8 @@ task compileSlice(type: Exec) {
     def iceFiles = files(
         'src/main/slice/VoteStation.ice',
         'src/main/slice/QueryStation.ice',
-        'src/main/slice/LoadBalancer.ice'
+        'src/main/slice/LoadBalancer.ice',  // Asegúrate de que este archivo exista
+        'src/main/slice/QueryCache.ice',       // Asegúrate de que este archivo exista
         // Añade más archivos .ice aquí si es necesario
     )
 

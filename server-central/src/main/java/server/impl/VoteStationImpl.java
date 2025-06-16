@@ -1,98 +1,90 @@
-// server-central/src/main/java/server/VoteStationImpl.java
 package server.impl;
 
 import com.zeroc.Ice.Current;
+import common.QueryCachePrx;
 import common.VoteStation;
 import server.Database;
 import server.VoteManager;
-
+import utils.HmacUtil;
+import utils.SecurityConfig;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 /**
- * Implementación de la interfaz remota VoteStation definida en ICE.
- * Esta clase actúa como puente entre el cliente y la lógica de negocio,
- * delegando la responsabilidad de registrar votos y generar reportes
- * al VoteManager (que sigue el patrón Singleton).
+ * Implementación de la estación de voto.
+ * Confiabilidad: No procesa el voto directamente, lo encola en una tabla de la BD.
+ * Invalidación de Caché: Notifica al servicio de caché cuando un voto es aceptado.
  */
 public class VoteStationImpl implements VoteStation {
 
-    /**
-     * Procesa una solicitud de voto proveniente del cliente.
-     *
-     * @param document Documento de identificación del votante.
-     * @param candidateId ID del candidato seleccionado.
-     * @param stationId ID de la estación donde se emite el voto.
-     * @param hmac Firma HMAC (por ahora no validada).
-     * @param current Contexto de la llamada remota.
-     * @return true si el voto fue registrado exitosamente, false si fue rechazado.
-     */
+    private final VoteManager voteManager;
+    private final QueryCachePrx queryCacheProxy;
+
+    // Nuevo constructor que recibe las dependencias
+    public VoteStationImpl(VoteManager voteManager, QueryCachePrx queryCacheProxy) {
+        this.voteManager = voteManager;
+        this.queryCacheProxy = queryCacheProxy;
+    }
+
+    // Constructor sin argumentos por si lo necesitas para pruebas, aunque no es ideal.
+    public VoteStationImpl() {
+        this.voteManager = VoteManager.getInstance();
+        this.queryCacheProxy = null; // En este caso, no podría invalidar la caché
+    }
+
     @Override
     public boolean vote(String document, int candidateId, int stationId, String hmac, Current current) {
-        System.out.println("\n--- [SERVIDOR] Petición de Voto Recibida ---");
-        System.out.printf("-> Documento: %s, Candidato ID: %d, Estación ID: %d%n", document, candidateId, stationId);
+        System.out.println("📥 Voto recibido para el documento: " + document);
 
-        String data = document + candidateId + stationId;
+        // 1. Validación de seguridad rápida (HMAC)
         try {
-
-            String expectedHmac = utils.HmacUtil.generateHmac(data, utils.SecurityConfig.HMAC_SECRET);
-            System.out.println(" HMAC esperado  : " + expectedHmac);
-            System.out.println(" HMAC recibido  : " + hmac);
-
-            if (!expectedHmac.equals(hmac)) {
-                System.out.println("->  HMAC inválido. Posible intento de manipulación.");
+            String dataToVerify = document + candidateId + stationId;
+            if (!HmacUtil.verifyHmac(dataToVerify, hmac, SecurityConfig.HMAC_SECRET)) {
+                System.err.println("Error de HMAC para el documento: " + document);
                 return false;
             }
-
         } catch (Exception e) {
-            System.out.println("->  Error al validar HMAC: " + e.getMessage());
+            System.err.println("Excepción al verificar HMAC: " + e.getMessage());
             return false;
         }
 
-        VoteManager manager = VoteManager.getInstance();
-        boolean success = manager.processVote(document, candidateId, stationId);
+        // 2. Crear el payload JSON para encolar en la base de datos
+        UUID messageId = UUID.randomUUID();
+        String payload = String.format(
+                "{\"document\": \"%s\", \"candidateId\": %d, \"stationId\": %d, \"hmac\": \"%s\", \"vote_uuid\": \"%s\"}",
+                document, candidateId, stationId, hmac, messageId.toString()
+        );
 
-        System.out.println("-> Resultado: " + (success ? " ÉXITO" : " FALLO"));
-        System.out.println("--------------------------------------------");
+        // 3. Insertar el voto en la cola (tabla 'vote_queue') para procesamiento asíncrono
+        String sql = "INSERT INTO vote_queue (message_id, payload, status) VALUES (?, ?::jsonb, 'PENDING')";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        return success;
+            stmt.setObject(1, messageId);
+            stmt.setString(2, payload);
+            stmt.executeUpdate();
+
+            System.out.println("✅ Voto para " + document + " encolado exitosamente con ID: " + messageId);
+
+            // 4. Retornar 'true' al cliente. El sistema ahora garantiza que procesará el voto.
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error al encolar el voto en la base de datos: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public void generateReport(Current current) {
+        System.out.println("📄 Solicitud de generación de reporte recibida. Delegando a VoteManager...");
+        this.voteManager.generateResumeCSV(); // <-- ¡Llamada correcta!
     }
 
     @Override
     public String[] getCandidates(Current current) {
-        List<String> candidatos = new ArrayList<>();
-        try (Connection conn = Database.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT candidate_id, name, party FROM candidates");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                candidatos.add("ID: " + rs.getInt("candidate_id") +
-                        " | Nombre: " + rs.getString("name") +
-                        " | Partido: " + rs.getString("party"));
-            }
-        } catch (Exception e) {
-            System.err.println("Error al consultar candidatos: " + e.getMessage());
-        }
-        return candidatos.toArray(new String[0]);  // Conversión correcta
-    }
-
-
-
-
-
-
-
-    /**
-     * Solicita la generación del archivo de resumen de votos.
-     *
-     * @param current Contexto de la llamada remota.
-     */
-    @Override
-    public void generateReport(Current current) {
-        System.out.println("\n--- [SERVIDOR] Petición de generación de reporte recibida ---");
-        VoteManager.getInstance().generateResumeCSV();
-        System.out.println("-> Reporte generado correctamente.");
+        return this.voteManager.getCandidateList();
     }
 }
