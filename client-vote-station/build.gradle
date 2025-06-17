@@ -20,47 +20,37 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-// ❗️Clase principal por defecto (puedes dejar VoteClient u otra por defecto)
+// ✅ Entry point por defecto para `java -jar`
 application {
     mainClass = 'client.vote.VoteClient'
 }
 
-// ✅ Task para ejecutar VoteClient
-tasks.register('runVoteClient', JavaExec) {
-    group = 'application'
-    description = 'Ejecuta el cliente de votación'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass.set('client.vote.VoteClient')
-    args '--Ice.Config=config.vote'
-}
-
-// ✅ Task para ejecutar RegisterStationsClient
-tasks.register('runRegisterStation', JavaExec) {
+// ✅ Ejecutar desde Gradle (opcional)
+tasks.register('runRegisterStationsClient', JavaExec) {
     group = 'application'
     description = 'Registra la estación de votación en el LoadBalancer'
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('client.vote.RegisterStationsClient')
-    args '--Ice.Config=config.vote'
-}
-
-
-tasks.register('copyVoteConfig', Copy) {
-    from('src/main/resources/config.vote')
-    into("$buildDir/generated-config")
+    args '--Ice.Config=src/main/resources/config.vote'
 }
 
 tasks.register('runMultiVoteSimulator', JavaExec) {
     group = 'application'
     description = 'Ejecuta múltiples votos simulados'
-    dependsOn 'copyVoteConfig'
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('client.vote.MultiVoteSimulator')
-    // Referencia al archivo en el nuevo destino seguro
-    args "$buildDir/generated-config/config.vote", '5', '10'
+    args 'src/main/resources/config.vote', '5', '10'
 }
 
+// ✅ Un solo .jar ejecutable con dependencias
+jar {
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
 
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 
-
-
-
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

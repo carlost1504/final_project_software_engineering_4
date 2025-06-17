@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'co.votingsystem'
@@ -19,12 +20,37 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+// ✅ Entry point por defecto para ejecutar con `java -jar`
+application {
+    mainClass = 'client.query.QueryClient'
+}
+
+// ✅ Ejecutar otras clases desde Gradle
+tasks.register('runRegisterQueryStationClient', JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el cliente que registra estaciones de consulta.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('client.query.RegisterQueryStationClient')
+    args '--Ice.Config=src/main/resources/config.query'
+}
+
 tasks.register('runMultiQuerySimulator', JavaExec) {
     group = 'application'
     description = 'Ejecuta simulador de múltiples clientes de consulta'
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('client.query.MultiQuerySimulator')
-    args 'config.query', '5', '10'  // puedes modificar estos valores
+    args 'src/main/resources/config.query', '5', '10'
 }
 
+// ✅ Empaquetado como JAR ejecutable con dependencias
+jar {
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
 
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

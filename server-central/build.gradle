@@ -8,11 +8,74 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.7.2'
 }
 
-application {
-    mainClass = 'server.ServerApp' // default
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
-// ✅ Tarea para correr el servidor principal
+// =======================
+// JAR ejecutable para LoadBalancer
+// =======================
+tasks.register('buildLoadBalancerJar', Jar) {
+    group = 'build'
+    description = 'Construye el JAR ejecutable de LoadBalancerServer.'
+    archiveFileName = "loadbalancer-server.jar"
+    destinationDirectory = file("$buildDir/libs")
+
+    manifest {
+        attributes 'Main-Class': 'server.service.LoadBalancerServer'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    with jar
+}
+
+// =======================
+// JAR ejecutable para VoteStation
+// =======================
+tasks.register('buildVoteStationJar', Jar) {
+    group = 'build'
+    description = 'Construye el JAR ejecutable de VoteStationServer.'
+    archiveFileName = "votestation-server.jar"
+    destinationDirectory = file("$buildDir/libs")
+
+    manifest {
+        attributes 'Main-Class': 'server.service.VoteStationServer'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    with jar
+}
+
+// =======================
+// JAR ejecutable para QueryStation
+// =======================
+tasks.register('buildQueryStationJar', Jar) {
+    group = 'build'
+    description = 'Construye el JAR ejecutable de QueryStationServer.'
+    archiveFileName = "querystation-server.jar"
+    destinationDirectory = file("$buildDir/libs")
+
+    manifest {
+        attributes 'Main-Class': 'server.service.QueryStationServer'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    with jar
+}
+
+// =======================
+// Tareas para ejecutar desde Gradle
+// =======================
 tasks.register('runServerApp', JavaExec) {
     group = "Application"
     description = "Ejecuta el servidor principal ServerApp."
@@ -20,31 +83,28 @@ tasks.register('runServerApp', JavaExec) {
     mainClass = 'server.ServerApp'
 }
 
-// ✅ Tarea para correr el LoadBalancerServer
 tasks.register('runLoadBalancer', JavaExec) {
     group = "Application"
     description = "Ejecuta LoadBalancerServer."
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'server.LoadBalancerServer'
+    mainClass = 'server.service.LoadBalancerServer'
+    args '--Ice.Config=config.server'
 }
 
-// ✅ Tarea para correr el VoteStationServer
 tasks.register('runVoteStation', JavaExec) {
     group = "Application"
     description = "Ejecuta VoteStationServer."
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'server.VoteStationServer'
+    mainClass = 'server.service.VoteStationServer'
 }
 
-// ✅ Tarea para correr el QueryStationServer
 tasks.register('runQueryStation', JavaExec) {
     group = "Application"
     description = "Ejecuta QueryStationServer."
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'server.QueryStationServer'
+    mainClass = 'server.service.QueryStationServer'
 }
 
-// ✅ Tarea para correr el cliente de prueba principal
 tasks.register('runTestClient', JavaExec) {
     group = "Application"
     description = "Ejecuta TestClient."
@@ -52,7 +112,6 @@ tasks.register('runTestClient', JavaExec) {
     mainClass = 'server.TestClient'
 }
 
-// ✅ Tarea para pruebas específicas
 tasks.register('runTestClientFraude', JavaExec) {
     group = "Application"
     description = "Ejecuta TestClientFraude."
@@ -72,13 +131,4 @@ tasks.register('runDBTest', JavaExec) {
     description = "Ejecuta pruebas sobre Database."
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'server.DBTest'
-}
-
-
-tasks.register('runLoadBalancerServer', JavaExec) {
-    group = 'application'
-    description = 'Inicia el servidor LoadBalancer'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass.set('server.service.LoadBalancerServer')  // ✅ esta es la ruta real
-    args '--Ice.Config=config.server'
 }

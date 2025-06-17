@@ -16,17 +16,21 @@ import java.util.Scanner;
 public class VoteClient {
     public static void main(String[] args) {
         try (Communicator communicator = Util.initialize(args)) {
-            ObjectPrx base = communicator.stringToProxy("VoteStation:default -p 10000");
+            // Leer configuración desde config.vote
+            Properties config = new Properties();
+            try (InputStream input = VoteClient.class.getClassLoader().getResourceAsStream("config.vote")) {
+                config.load(input);
+            }
+
+            String endpoint = config.getProperty("VoteStationAdapter.Endpoints").trim();
+            int stationId = Integer.parseInt(config.getProperty("station.id").trim());
+
+            // Crear proxy a la estación de voto
+            ObjectPrx base = communicator.stringToProxy("VoteStation:" + endpoint);
             VoteStationPrx voteStation = VoteStationPrx.checkedCast(base);
 
             if (voteStation == null) {
                 throw new Error("Proxy inválido.");
-            }
-
-            int stationId = readStationIdFromConfig();
-            if (stationId == -1) {
-                System.err.println("No se pudo obtener el ID de estación desde config.vote.");
-                return;
             }
 
             Scanner sc = new Scanner(System.in);
@@ -68,17 +72,6 @@ public class VoteClient {
         }
     }
 
-    private static int readStationIdFromConfig() {
-        try (InputStream input = VoteClient.class.getClassLoader().getResourceAsStream("config.vote")) {
-            Properties prop = new Properties();
-            prop.load(input);
-            return Integer.parseInt(prop.getProperty("station.id").trim());
-        } catch (Exception e) {
-            System.err.println("Error al leer station.id de config.vote: " + e.getMessage());
-            return -1;
-        }
-    }
-
     private static void mostrarCandidatos(VoteStationPrx voteStation) {
         try {
             String[] candidatos = voteStation.getCandidates();
@@ -114,3 +107,4 @@ public class VoteClient {
         }
     }
 }
+

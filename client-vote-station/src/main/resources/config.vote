@@ -1,4 +1,4 @@
-VoteStationAdapter.Endpoints=tcp -h 127.0.0.1 -p 10000
+VoteStationAdapter.Endpoints=tcp -h 127.0.0.1 -p 12000
 LoadBalancer.Proxy=LoadBalancer:default -h 127.0.0.1 -p 11000
 station.id=1
 
